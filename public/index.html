@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HealthTwin AI</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        HealthTwin <span>AI</span>
+    </div>
+
+    <div class="badge">SYNTHETIC DEMO</div>
+</header>
+
+<main>
+
+    <section class="hero">
+        <p class="tag">INDIVIDUAL PATIENT DIGITAL TWIN</p>
+
+        <h1>
+            Understand Your Health
+            <br>
+            Through a Digital Twin
+        </h1>
+
+        <p class="hero-text">
+            HealthTwin AI combines historical health records
+            with dynamic health measurements to visualize
+            patient health trends and explore what-if scenarios.
+        </p>
+    </section>
+
+    <section class="dashboard">
+
+        <div class="metric-card">
+            <p>Latest Blood Pressure</p>
+            <h2 id="bpValue">--/--</h2>
+            <span>mmHg</span>
+        </div>
+
+        <div class="metric-card">
+            <p>Heart Rate</p>
+            <h2 id="hrValue">--</h2>
+            <span>BPM</span>
+        </div>
+
+        <div class="metric-card">
+            <p>Sleep</p>
+            <h2 id="sleepValue">--</h2>
+            <span>hours</span>
+        </div>
+
+        <div class="metric-card">
+            <p>Twin Status</p>
+            <h2 id="twinStatus">ACTIVE</h2>
+            <span>Demo Twin</span>
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>Patient Digital Twin</h2>
+            <span id="patientId">HT-001</span>
+        </div>
+
+        <p>
+            A synthetic patient profile continuously updated
+            from available health measurements.
+        </p>
+
+        <div class="twin-info">
+
+            <div>
+                <strong>Condition Focus</strong>
+                <p>Hypertension</p>
+            </div>
+
+            <div>
+                <strong>Data Type</strong>
+                <p>Synthetic</p>
+            </div>
+
+            <div>
+                <strong>Model State</strong>
+                <p id="modelState">Monitoring</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>Data Streams</h2>
+        </div>
+
+        <div class="streams">
+
+            <div class="stream">
+                <div class="stream-icon">📋</div>
+                <div>
+                    <strong>Historical Health Records</strong>
+                    <p>Previous BP, heart rate and sleep records</p>
+                </div>
+            </div>
+
+            <div class="stream">
+                <div class="stream-icon">⌚</div>
+                <div>
+                    <strong>Dynamic Health Stream</strong>
+                    <p>Simulated time-series measurements</p>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>Add Health Measurement</h2>
+        </div>
+
+        <div class="form-grid">
+
+            <div>
+                <label>Systolic BP</label>
+                <input id="systolic" type="number" placeholder="e.g. 135">
+            </div>
+
+            <div>
+                <label>Diastolic BP</label>
+                <input id="diastolic" type="number" placeholder="e.g. 85">
+            </div>
+
+            <div>
+                <label>Heart Rate</label>
+                <input id="hr" type="number" placeholder="e.g. 75">
+            </div>
+
+            <div>
+                <label>Sleep Hours</label>
+                <input id="sleepInput" type="number" step="0.1" placeholder="e.g. 7">
+            </div>
+
+        </div>
+
+        <div class="button-row">
+
+            <button onclick="updateTwin()">
+                Update Digital Twin
+            </button>
+
+            <button class="secondary" onclick="simulateWearable()">
+                Simulate Wearable Reading
+            </button>
+
+        </div>
+
+        <p id="message"></p>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>Digital Twin Timeline</h2>
+        </div>
+
+        <div id="timeline"></div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>What-If Scenario Lab</h2>
+            <span>Demo Simulation</span>
+        </div>
+
+        <p>
+            Explore how changing activity and sleep inputs
+            affects the illustrative twin scenario score.
+        </p>
+
+        <div class="slider-box">
+
+            <label>
+                Activity Level:
+                <strong id="activityValue">30</strong>%
+            </label>
+
+            <input
+                id="activity"
+                type="range"
+                min="0"
+                max="100"
+                value="30"
+                oninput="updateScenario()"
+            >
+
+        </div>
+
+        <div class="slider-box">
+
+            <label>
+                Sleep:
+                <strong id="scenarioSleepValue">7</strong>
+                hours
+            </label>
+
+            <input
+                id="scenarioSleep"
+                type="range"
+                min="4"
+                max="10"
+                step="0.5"
+                value="7"
+                oninput="updateScenario()"
+            >
+
+        </div>
+
+        <div class="scenario-score">
+            <span>Illustrative Scenario Score</span>
+            <strong id="scenarioScore">50</strong>
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-title">
+            <h2>Health Resource Explorer</h2>
+        </div>
+
+        <p>Search for educational health resources.</p>
+
+        <div class="search-box">
+
+            <input
+                id="searchTopic"
+                type="text"
+                value="hypertension"
+                placeholder="Search health topic"
+            >
+
+            <button onclick="searchResources()">
+                Search
+            </button>
+
+        </div>
+
+        <div id="resources"></div>
+
+    </section>
+
+    <section class="card export-card">
+
+        <h2>Demo Data</h2>
+
+        <p>
+            Export the synthetic Digital Twin data as JSON.
+        </p>
+
+        <button onclick="exportData()">
+            Export JSON
+        </button>
+
+    </section>
+
+    <section class="disclaimer">
+
+        <strong>⚠️ Safety & Privacy Notice</strong>
+
+        <p>
+            This prototype uses synthetic demonstration data.
+            It is not a medical diagnostic system and should
+            not be used for clinical decision-making.
+            Scenario scores are illustrative and are not
+            clinically validated.
+        </p>
+
+    </section>
+
+</main>
+
+<footer>
+    HealthTwin AI • Digital Health Hackathon Prototype
+</footer>
+
+<script src="app.js"></script>
+
+</body>
+</html>
