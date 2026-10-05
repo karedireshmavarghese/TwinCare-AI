@@ -1,0 +1,12 @@
+{
+  "name": "healthtwin-ai",
+  "version": "1.0.0",
+  "description": "AI-powered individual patient Digital Twin prototype",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
