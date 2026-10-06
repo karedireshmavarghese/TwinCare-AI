@@ -1,161 +1,89 @@
-```javascript
-window.sendChatMessage = async function() {
+<script type="module">
+  // Keep your existing Firebase imports and authentication code above this.
 
-  const input =
-    document.getElementById("chatInput");
+  window.sendChatMessage = async function () {
+    const input = document.getElementById("chatInput");
+    const messages = document.getElementById("chatMessages");
 
-  const messages =
-    document.getElementById("chatMessages");
+    if (!input || !messages) {
+      console.error("Chat elements not found.");
+      return;
+    }
 
-  const message =
-    input.value.trim();
+    const message = input.value.trim();
 
-  if (!message) {
-    return;
-  }
+    if (!message) return;
 
-  /* USER MESSAGE */
+    // User message
+    const userMessage = document.createElement("div");
+    userMessage.className = "userMessage";
+    userMessage.textContent = message;
+    messages.appendChild(userMessage);
 
-  const userMessage =
-    document.createElement("div");
+    input.value = "";
+    messages.scrollTop = messages.scrollHeight;
 
-  userMessage.className =
-    "userMessage";
+    // Typing indicator
+    const typing = document.createElement("div");
+    typing.className = "typing";
+    typing.textContent = "TwinCare Assistant is thinking...";
+    messages.appendChild(typing);
 
-  userMessage.textContent =
-    message;
+    messages.scrollTop = messages.scrollHeight;
 
-  messages.appendChild(userMessage);
-
-  input.value = "";
-
-  messages.scrollTop =
-    messages.scrollHeight;
-
-
-  /* TYPING */
-
-  const typing =
-    document.createElement("div");
-
-  typing.className =
-    "typing";
-
-  typing.textContent =
-    "TwinCare Assistant is thinking...";
-
-  messages.appendChild(typing);
-
-  messages.scrollTop =
-    messages.scrollHeight;
-
-
-  try {
-
-    const response =
-      await fetch("/api/chat", {
-
+    try {
+      const response = await fetch("/api/chat", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
           message: message
         })
-
       });
 
+      const rawText = await response.text();
 
-    /* GET RESPONSE SAFELY */
+      let data;
 
-    const rawText =
-      await response.text();
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = {
+          error: rawText || "Invalid server response."
+        };
+      }
 
-    let data = {};
+      typing.remove();
 
-    try {
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Server error (${response.status})`
+        );
+      }
 
-      data =
-        JSON.parse(rawText);
+      if (!data.reply) {
+        throw new Error("AI returned an empty response.");
+      }
 
-    } catch {
+      const botMessage = document.createElement("div");
+      botMessage.className = "botMessage";
+      botMessage.textContent = data.reply;
 
-      data = {
-        error: rawText || "Server returned an invalid response."
-      };
+      messages.appendChild(botMessage);
+      messages.scrollTop = messages.scrollHeight;
 
+    } catch (error) {
+      typing.remove();
+
+      const errorMessage = document.createElement("div");
+      errorMessage.className = "botMessage";
+      errorMessage.textContent = "⚠️ " + error.message;
+
+      messages.appendChild(errorMessage);
+      messages.scrollTop = messages.scrollHeight;
+
+      console.error("TwinCare chatbot error:", error);
     }
-
-
-    typing.remove();
-
-
-    /* SERVER ERROR */
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.error ||
-        `Server error (${response.status})`
-      );
-
-    }
-
-
-    /* EMPTY RESPONSE */
-
-    if (!data.reply) {
-
-      throw new Error(
-        "AI returned an empty response."
-      );
-
-    }
-
-
-    /* AI MESSAGE */
-
-    const botMessage =
-      document.createElement("div");
-
-    botMessage.className =
-      "botMessage";
-
-    botMessage.textContent =
-      data.reply;
-
-    messages.appendChild(botMessage);
-
-    messages.scrollTop =
-      messages.scrollHeight;
-
-
-  } catch (error) {
-
-    typing.remove();
-
-    const errorMessage =
-      document.createElement("div");
-
-    errorMessage.className =
-      "botMessage";
-
-    errorMessage.textContent =
-      "⚠️ " + error.message;
-
-    messages.appendChild(errorMessage);
-
-    messages.scrollTop =
-      messages.scrollHeight;
-
-    console.error(
-      "TwinCare chatbot error:",
-      error
-    );
-
-  }
-
-};
-```
+  };
+</script>
