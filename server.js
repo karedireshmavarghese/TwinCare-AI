@@ -5,184 +5,170 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
 app.use(express.static("public"));
 
-
-/* =========================
+/* ================================
    HEALTH CHECK
-========================= */
+================================ */
 
 app.get("/api/health", (req, res) => {
-
-    res.json({
-        status: "online",
-        application: "TwinCare AI",
-        message: "Digital Twin backend is running"
-    });
-
+  res.json({
+    status: "online",
+    application: "TwinCare AI",
+    message: "Backend is running"
+  });
 });
 
 
-/* =========================
-   SERPAPI RESOURCES
-========================= */
+/* ================================
+   RESOURCE SEARCH
+================================ */
 
 app.get("/api/resources", async (req, res) => {
 
-    try {
+  try {
 
-        const condition = String(
-            req.query.condition || "hypertension"
-        ).trim();
+    const condition =
+      String(
+        req.query.condition || "hypertension"
+      ).trim();
 
-        const apiKey = process.env.SERPAPI_KEY;
+    const apiKey =
+      process.env.SERPAPI_KEY;
 
-        if (!apiKey) {
+    if (!apiKey) {
 
-            return res.status(500).json({
-                error: "SerpApi is not configured."
-            });
-
-        }
-
-        const params = new URLSearchParams({
-
-            engine: "google",
-
-            q: `${condition} health education`,
-
-            api_key: apiKey
-
-        });
-
-
-        const response = await fetch(
-            `https://serpapi.com/search.json?${params}`
-        );
-
-
-        const data = await response.json();
-
-
-        if (!response.ok) {
-
-            return res.status(502).json({
-                error: "SerpApi request failed."
-            });
-
-        }
-
-
-        const results =
-            (data.organic_results || [])
-                .slice(0, 5)
-                .map(item => ({
-
-                    title: item.title,
-
-                    link: item.link,
-
-                    snippet: item.snippet
-
-                }));
-
-
-        res.json({
-
-            condition,
-
-            results
-
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Resource search error:",
-            error
-        );
-
-
-        res.status(500).json({
-
-            error:
-                "Unable to retrieve resources."
-
-        });
+      return res.status(500).json({
+        error: "SERPAPI_KEY is not configured."
+      });
 
     }
+
+    const params =
+      new URLSearchParams({
+        engine: "google",
+        q: `${condition} health education`,
+        api_key: apiKey
+      });
+
+    const response =
+      await fetch(
+        `https://serpapi.com/search.json?${params}`
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      console.error(
+        "SerpApi error:",
+        data
+      );
+
+      return res.status(502).json({
+        error: "SerpApi request failed."
+      });
+
+    }
+
+    const results =
+      (data.organic_results || [])
+        .slice(0, 5)
+        .map(item => ({
+          title: item.title,
+          link: item.link,
+          snippet: item.snippet
+        }));
+
+    res.json({
+      condition,
+      results
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Resource error:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Unable to retrieve resources."
+    });
+
+  }
 
 });
 
 
-/* =========================
-   GEMINI CHATBOT
-========================= */
+/* ================================
+   AI CHATBOT
+================================ */
 
 app.post("/api/chat", async (req, res) => {
 
-    try {
+  try {
 
-        const message =
-            String(
-                req.body?.message || ""
-            ).trim();
-
-
-        if (!message) {
-
-            return res.status(400).json({
-
-                error:
-                    "Message is required."
-
-            });
-
-        }
+    const message =
+      String(
+        req.body?.message || ""
+      ).trim();
 
 
-        const apiKey =
-            process.env.GEMINI_API_KEY;
+    if (!message) {
+
+      return res.status(400).json({
+        error: "Message is required."
+      });
+
+    }
 
 
-        if (!apiKey) {
+    /* GET GEMINI KEY */
 
-            console.error(
-                "GEMINI_API_KEY is missing."
-            );
-
-
-            return res.status(500).json({
-
-                error:
-                    "Gemini API key is not configured."
-
-            });
-
-        }
+    const apiKey =
+      process.env.GEMINI_API_KEY;
 
 
-        const prompt = `
-You are TwinCare Assistant,
-an educational AI assistant inside
-a student-built Digital Health Twin prototype.
+    console.log(
+      "Gemini key detected:",
+      Boolean(apiKey)
+    );
 
-Answer the user's question clearly and simply.
 
-Important safety rules:
+    if (!apiKey) {
 
-- Provide general health education only.
+      return res.status(500).json({
+        error:
+          "GEMINI_API_KEY is not available to the server."
+      });
+
+    }
+
+
+    /* AI PROMPT */
+
+    const prompt = `
+You are TwinCare Assistant.
+
+You are an educational AI assistant
+inside a student-built Digital Health Twin
+prototype.
+
+Give clear and simple health education.
+
+Rules:
+
 - Do not diagnose diseases.
 - Do not prescribe medicines.
 - Do not recommend changing medicine doses.
-- Do not claim that TwinCare AI is clinically validated.
-- Treat all TwinCare measurements as synthetic demonstration data.
-- Encourage consultation with a qualified healthcare professional
-  for personal medical decisions.
-- If the user describes a potentially serious or emergency situation,
-  advise them to seek appropriate urgent medical care.
-- Keep responses concise and easy to understand.
+- Do not claim clinical validation.
+- Treat TwinCare measurements as synthetic demo data.
+- Encourage users to consult qualified healthcare
+  professionals for personal medical decisions.
+- For emergencies, advise seeking urgent medical care.
 
 User question:
 
@@ -190,141 +176,146 @@ ${message}
 `;
 
 
-        const response = await fetch(
+    /* GEMINI REQUEST */
 
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    const response =
+      await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        {
+          method: "POST",
 
-            {
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey
+          },
 
-                method: "POST",
+          body: JSON.stringify({
 
-                headers: {
+            contents: [
+              {
+                role: "user",
 
-                    "Content-Type":
-                        "application/json",
+                parts: [
+                  {
+                    text: prompt
+                  }
+                ]
 
-                    "x-goog-api-key":
-                        apiKey
+              }
+            ]
 
-                },
-
-                body: JSON.stringify({
-
-                    contents: [
-
-                        {
-
-                            role: "user",
-
-                            parts: [
-
-                                {
-
-                                    text:
-                                        prompt
-
-                                }
-
-                            ]
-
-                        }
-
-                    ]
-
-                })
-
-            }
-
-        );
-
-
-        const data =
-            await response.json();
-
-
-        console.log(
-            "Gemini HTTP status:",
-            response.status
-        );
-
-
-        if (!response.ok) {
-
-            console.error(
-                "Gemini API error:",
-                JSON.stringify(data)
-            );
-
-
-            return res.status(502).json({
-
-                error:
-                    "Gemini API request failed."
-
-            });
+          })
 
         }
+      );
 
 
-        const reply =
-            data?.candidates?.[0]
-                ?.content?.parts?.[0]
-                ?.text;
+    /* READ RESPONSE */
+
+    const data =
+      await response.json();
 
 
-        if (!reply) {
-
-            console.error(
-                "Gemini returned no text:",
-                JSON.stringify(data)
-            );
+    console.log(
+      "Gemini status:",
+      response.status
+    );
 
 
-            return res.status(502).json({
+    /* GEMINI ERROR */
 
-                error:
-                    "Gemini returned an empty response."
+    if (!response.ok) {
 
-            });
+      console.error(
+        "Gemini API error:",
+        JSON.stringify(data)
+      );
 
-        }
+      return res.status(502).json({
 
+        error:
+          data?.error?.message ||
+          "Gemini API request failed."
 
-        res.json({
-
-            reply: reply.trim()
-
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Chatbot server error:",
-            error
-        );
-
-
-        res.status(500).json({
-
-            error:
-                "Unable to contact Gemini."
-
-        });
+      });
 
     }
 
-});
+
+    /* GET AI TEXT */
+
+    const reply =
+      data?.candidates?.[0]
+        ?.content
+        ?.parts?.[0]
+        ?.text;
 
 
-/* =========================
-   START SERVER
-========================= */
+    if (!reply) {
 
-app.listen(PORT, () => {
+      console.error(
+        "Gemini response:",
+        JSON.stringify(data)
+      );
 
-    console.log(
-        `TwinCare AI running on port ${PORT}`
+      return res.status(502).json({
+        error:
+          "Gemini returned no response."
+      });
+
+    }
+
+
+    /* SEND AI RESPONSE */
+
+    return res.json({
+
+      reply: reply.trim()
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Chatbot error:",
+      error
     );
 
+    return res.status(500).json({
+
+      error:
+        error.message ||
+        "Unable to contact Gemini."
+
+    });
+
+  }
+
 });
+
+
+/* ================================
+   START SERVER
+================================ */
+
+app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `TwinCare AI running on port ${PORT}`
+    );
+
+    console.log(
+      "Gemini configured:",
+      Boolean(process.env.GEMINI_API_KEY)
+    );
+
+    console.log(
+      "SerpApi configured:",
+      Boolean(process.env.SERPAPI_KEY)
+    );
+
+  }
+);
