@@ -1,568 +1,1644 @@
-<script type="module">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  /* ================================
-     FIREBASE
-  ================================= */
+  <title>TwinCare AI | Digital Health Twin</title>
 
-  import {
-    initializeApp
-  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-
-  import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-
-
-  /* ================================
-     FIREBASE CONFIG
-  ================================= */
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBzKOCTQ55EodlvAF712d_GlVlA8UTHJrk",
-    authDomain: "twincare-ai-7a018.firebaseapp.com",
-    projectId: "twincare-ai-7a018",
-    storageBucket: "twincare-ai-7a018.firebasestorage.app",
-    messagingSenderId: "706086757079",
-    appId: "1:706086757079:web:4364bf7774867f503d8692",
-    measurementId: "G-3QHSG2CCM8"
-  };
-
-
-  /* ================================
-     INITIALIZE FIREBASE
-  ================================= */
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-
-  /* ================================
-     AUTH MODAL
-  ================================= */
-
-  window.openAuth = function (mode = "signin") {
-
-    const modal = document.getElementById("authModal");
-
-    if (!modal) {
-      console.error("authModal not found");
-      return;
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Inter, Arial, sans-serif;
     }
 
-    modal.style.display = "flex";
+    body {
+      background: #07111f;
+      color: white;
+      min-height: 100vh;
+    }
 
-    window.switchAuth(mode);
-  };
+    /* NAVBAR */
+
+    nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 7%;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(7,17,31,0.95);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .logo span {
+      color: #35d6c8;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 11px 18px;
+      font-weight: 700;
+    }
+
+    .login-btn {
+      background: transparent;
+      color: white;
+      border: 1px solid #334155;
+    }
+
+    .signup-btn {
+      background: #35d6c8;
+      color: #041016;
+    }
+
+    /* HERO */
+
+    .hero {
+      min-height: 650px;
+      padding: 90px 7%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(53,214,200,0.12);
+      color: #35d6c8;
+      padding: 8px 14px;
+      border-radius: 30px;
+      margin-bottom: 22px;
+      font-size: 14px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 span {
+      color: #35d6c8;
+    }
+
+    .hero p {
+      color: #a8b4c5;
+      font-size: 18px;
+      line-height: 1.7;
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 14px;
+    }
+
+    .primary-btn {
+      background: #35d6c8;
+      color: #041016;
+      padding: 14px 24px;
+    }
+
+    .secondary-btn {
+      background: #111d2e;
+      color: white;
+      border: 1px solid #26364d;
+      padding: 14px 24px;
+    }
+
+    /* DIGITAL TWIN */
+
+    .twin-card {
+      min-height: 430px;
+      border: 1px solid rgba(53,214,200,0.18);
+      border-radius: 28px;
+      background: linear-gradient(
+        145deg,
+        rgba(17,35,54,0.95),
+        rgba(8,20,34,0.95)
+      );
+      box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pulse {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      border: 2px solid #35d6c8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 40px rgba(53,214,200,0.2),
+        inset 0 0 40px rgba(53,214,200,0.08);
+      animation: pulse 2.5s infinite;
+    }
+
+    .pulse-inner {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(53,214,200,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+
+    @keyframes pulse {
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .twin-label {
+      margin-top: 25px;
+      color: #a8b4c5;
+    }
+
+    .status {
+      color: #35d6c8;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    /* FEATURES */
+
+    .features {
+      padding: 80px 7%;
+      background: #091625;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 45px;
+    }
+
+    .section-title h2 {
+      font-size: 38px;
+      margin-bottom: 12px;
+    }
+
+    .section-title p {
+      color: #9aa8ba;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature {
+      padding: 28px;
+      background: #0d1b2d;
+      border: 1px solid #1b3048;
+      border-radius: 18px;
+    }
+
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .feature h3 {
+      margin-bottom: 10px;
+    }
+
+    .feature p {
+      color: #91a1b4;
+      line-height: 1.6;
+    }
+
+    /* DASHBOARD */
+
+    #dashboard {
+      display: none;
+      padding: 70px 7%;
+      background: #06101d;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .dashboard-header p {
+      color: #8fa0b4;
+      margin-top: 6px;
+    }
+
+    .logout-btn {
+      background: #18283a;
+      color: white;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .metric {
+      background: #0c1a2b;
+      border: 1px solid #1b3048;
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .metric small {
+      color: #91a1b4;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 30px;
+      margin-top: 10px;
+    }
+
+    .metric span {
+      color: #35d6c8;
+      font-size: 13px;
+    }
+
+    /* CHATBOT */
+
+    .chat-button {
+      position: fixed;
+      right: 25px;
+      bottom: 25px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #35d6c8;
+      color: #041016;
+      font-size: 24px;
+      z-index: 500;
+    }
+
+    .chat-window {
+      position: fixed;
+      right: 25px;
+      bottom: 95px;
+      width: 360px;
+      height: 500px;
+      background: #0b1929;
+      border: 1px solid #263c55;
+      border-radius: 18px;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 500;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .chat-header {
+      padding: 17px;
+      background: #102337;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header small {
+      display: block;
+      color: #35d6c8;
+      margin-top: 4px;
+    }
+
+    .chat-close {
+      background: transparent;
+      color: white;
+      font-size: 20px;
+      padding: 4px;
+    }
+
+    #chatMessages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .userMessage,
+    .botMessage,
+    .typing {
+      padding: 10px 13px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      max-width: 85%;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .userMessage {
+      background: #35d6c8;
+      color: #041016;
+      margin-left: auto;
+    }
+
+    .botMessage {
+      background: #17283b;
+      color: #dce7f2;
+    }
+
+    .typing {
+      color: #8fa0b4;
+      font-style: italic;
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid #21364c;
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: #111f30;
+      border: 1px solid #294158;
+      color: white;
+      padding: 11px;
+      border-radius: 9px;
+      outline: none;
+    }
+
+    .chat-input button {
+      background: #35d6c8;
+      color: #041016;
+    }
+
+    /* AUTH MODAL */
+
+    #authModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .auth-box {
+      width: 400px;
+      max-width: 100%;
+      background: #0d1b2d;
+      border: 1px solid #294158;
+      border-radius: 20px;
+      padding: 30px;
+      position: relative;
+    }
+
+    .auth-close {
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      background: transparent;
+      color: white;
+      font-size: 22px;
+    }
+
+    .auth-box h2 {
+      margin-bottom: 8px;
+    }
+
+    .auth-box > p {
+      color: #8fa0b4;
+      margin-bottom: 25px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 20px;
+      background: #07111f;
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .auth-tabs button {
+      background: transparent;
+      color: #8fa0b4;
+    }
+
+    .auth-tabs button.active {
+      background: #35d6c8;
+      color: #041016;
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .auth-form input {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 12px;
+      border-radius: 9px;
+      border: 1px solid #294158;
+      background: #081522;
+      color: white;
+      outline: none;
+    }
+
+    .auth-submit {
+      width: 100%;
+      background: #35d6c8;
+      color: #041016;
+      margin-top: 5px;
+    }
+
+    .disclaimer {
+      text-align: center;
+      padding: 25px;
+      color: #68798d;
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 60px;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+    }
+
+    @media (max-width: 550px) {
+
+      nav {
+        padding: 0 20px;
+      }
+
+      .hero {
+        padding: 55px 20px;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-window {
+        left: 15px;
+        right: 15px;
+        width: auto;
+      }
+
+      .features,
+      #dashboard {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+
+  <nav>
+
+    <div class="logo">
+      Twin<span>Care</span> AI
+    </div>
+
+    <div class="nav-buttons">
+
+      <button
+        class="login-btn"
+        onclick="openAuth('signin')">
+        Sign In
+      </button>
+
+      <button
+        class="signup-btn"
+        onclick="openAuth('signup')">
+        Create Account
+      </button>
+
+    </div>
+
+  </nav>
 
 
-  window.closeAuth = function () {
+  <!-- HERO -->
 
-    const modal = document.getElementById("authModal");
+  <section class="hero">
 
-    if (modal) {
+    <div>
+
+      <div class="badge">
+        AI-Powered Digital Health Twin
+      </div>
+
+      <h1>
+        Understand Your
+        <span>Health Twin.</span>
+      </h1>
+
+      <p>
+        TwinCare AI creates a personalized digital
+        representation of health measurements using
+        synthetic demonstration data, trends,
+        simulations and educational AI insights.
+      </p>
+
+      <div class="hero-buttons">
+
+        <button
+          class="primary-btn"
+          onclick="openAuth('signup')">
+          Create Your Twin
+        </button>
+
+        <button
+          class="secondary-btn"
+          onclick="openAuth('signin')">
+          Sign In
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="twin-card">
+
+      <div class="pulse">
+
+        <div class="pulse-inner">
+          ❤️
+        </div>
+
+      </div>
+
+      <div class="twin-label">
+        Digital Health Twin
+      </div>
+
+      <div class="status">
+        ● Simulation Active
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- FEATURES -->
+
+  <section class="features">
+
+    <div class="section-title">
+
+      <h2>
+        Your Health. Visualized.
+      </h2>
+
+      <p>
+        Explore health trends through a digital
+        twin experience.
+      </p>
+
+    </div>
+
+
+    <div class="feature-grid">
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          🫀
+        </div>
+
+        <h3>
+          Health Monitoring
+        </h3>
+
+        <p>
+          View demonstration measurements
+          such as blood pressure, heart rate,
+          sleep and activity.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          📈
+        </div>
+
+        <h3>
+          Trend Analysis
+        </h3>
+
+        <p>
+          Understand how simulated health
+          measurements change over time.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          🤖
+        </div>
+
+        <h3>
+          AI Health Assistant
+        </h3>
+
+        <p>
+          Ask general health-education questions
+          through the TwinCare AI assistant.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          🔮
+        </div>
+
+        <h3>
+          What-If Simulation
+        </h3>
+
+        <p>
+          Explore illustrative changes in
+          synthetic health scenarios.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          ⌚
+        </div>
+
+        <h3>
+          Wearable Data
+        </h3>
+
+        <p>
+          Display simulated wearable measurements
+          for prototype demonstration.
+        </p>
+
+      </div>
+
+
+      <div class="feature">
+
+        <div class="feature-icon">
+          📚
+        </div>
+
+        <h3>
+          Resource Explorer
+        </h3>
+
+        <p>
+          Discover educational health resources
+          through the backend resource service.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- DASHBOARD -->
+
+  <section id="dashboard">
+
+    <div class="dashboard-header">
+
+      <div>
+
+        <h2>
+          TwinCare Dashboard
+        </h2>
+
+        <p id="userEmail">
+          Loading account...
+        </p>
+
+      </div>
+
+      <button
+        class="logout-btn"
+        onclick="handleSignOut()">
+        Logout
+      </button>
+
+    </div>
+
+
+    <div class="dashboard-grid">
+
+      <div class="metric">
+
+        <small>
+          Blood Pressure
+        </small>
+
+        <strong>
+          128/82
+        </strong>
+
+        <span>
+          Synthetic data
+        </span>
+
+      </div>
+
+
+      <div class="metric">
+
+        <small>
+          Heart Rate
+        </small>
+
+        <strong>
+          76 BPM
+        </strong>
+
+        <span>
+          Synthetic data
+        </span>
+
+      </div>
+
+
+      <div class="metric">
+
+        <small>
+          Sleep
+        </small>
+
+        <strong>
+          7.2 h
+        </strong>
+
+        <span>
+          Synthetic data
+        </span>
+
+      </div>
+
+
+      <div class="metric">
+
+        <small>
+          Activity
+        </small>
+
+        <strong>
+          6,842
+        </strong>
+
+        <span>
+          Simulated steps
+        </span>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- CHATBOT -->
+
+  <button
+    class="chat-button"
+    onclick="openChatbot()">
+    🤖
+  </button>
+
+
+  <div
+    class="chat-window"
+    id="chatWindow">
+
+    <div class="chat-header">
+
+      <div>
+
+        <strong>
+          TwinCare Assistant
+        </strong>
+
+        <small>
+          Health education assistant
+        </small>
+
+      </div>
+
+      <button
+        class="chat-close"
+        onclick="closeChatbot()">
+        ×
+      </button>
+
+    </div>
+
+
+    <div id="chatMessages">
+
+      <div class="botMessage">
+        Hi! I'm TwinCare Assistant.
+        Ask me a general health-education question.
+      </div>
+
+    </div>
+
+
+    <div class="chat-input">
+
+      <input
+        id="chatInput"
+        type="text"
+        placeholder="Ask something..."
+        autocomplete="off">
+
+      <button
+        onclick="sendChatMessage()">
+        Send
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- AUTH MODAL -->
+
+  <div id="authModal">
+
+    <div class="auth-box">
+
+      <button
+        class="auth-close"
+        onclick="closeAuth()">
+        ×
+      </button>
+
+
+      <h2>
+        Welcome to TwinCare AI
+      </h2>
+
+      <p>
+        Securely access your digital health twin.
+      </p>
+
+
+      <div class="auth-tabs">
+
+        <button
+          id="signInTab"
+          class="active"
+          onclick="switchAuth('signin')">
+          Sign In
+        </button>
+
+        <button
+          id="signUpTab"
+          onclick="switchAuth('signup')">
+          Create Account
+        </button>
+
+      </div>
+
+
+      <!-- SIGN IN -->
+
+      <div
+        id="signInForm"
+        class="auth-form active">
+
+        <input
+          id="signinEmail"
+          type="email"
+          placeholder="Email address">
+
+        <input
+          id="signinPassword"
+          type="password"
+          placeholder="Password">
+
+        <button
+          class="auth-submit"
+          onclick="handleSignIn()">
+          Sign In
+        </button>
+
+      </div>
+
+
+      <!-- SIGN UP -->
+
+      <div
+        id="signUpForm"
+        class="auth-form">
+
+        <input
+          id="signupName"
+          type="text"
+          placeholder="Full name">
+
+        <input
+          id="signupEmail"
+          type="email"
+          placeholder="Email address">
+
+        <input
+          id="signupPassword"
+          type="password"
+          placeholder="Password">
+
+        <button
+          class="auth-submit"
+          onclick="handleSignUp()">
+          Create Account
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="disclaimer">
+
+    TwinCare AI is a student-built educational prototype.
+    All displayed health measurements are synthetic demonstration data.
+    It is not a medical diagnosis or clinical decision-making system.
+
+  </div>
+
+
+  <!-- FIREBASE + APPLICATION JAVASCRIPT -->
+
+  <script type="module">
+
+    import {
+      initializeApp
+    } from
+    "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from
+    "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+
+    /* FIREBASE CONFIG */
+
+    const firebaseConfig = {
+
+      apiKey:
+        "AIzaSyBzKOCTQ55EodlvAF712d_GlVlA8UTHJrk",
+
+      authDomain:
+        "twincare-ai-7a018.firebaseapp.com",
+
+      projectId:
+        "twincare-ai-7a018",
+
+      storageBucket:
+        "twincare-ai-7a018.firebasestorage.app",
+
+      messagingSenderId:
+        "706086757079",
+
+      appId:
+        "1:706086757079:web:4364bf7774867f503d8692",
+
+      measurementId:
+        "G-3QHSG2CCM8"
+
+    };
+
+
+    /* INITIALIZE */
+
+    const firebaseApp =
+      initializeApp(firebaseConfig);
+
+    const auth =
+      getAuth(firebaseApp);
+
+
+    /* AUTH MODAL */
+
+    window.openAuth = function(mode = "signin") {
+
+      const modal =
+        document.getElementById("authModal");
+
+      modal.style.display = "flex";
+
+      window.switchAuth(mode);
+
+    };
+
+
+    window.closeAuth = function() {
+
+      const modal =
+        document.getElementById("authModal");
+
       modal.style.display = "none";
-    }
 
-  };
+    };
 
 
-  window.switchAuth = function (mode) {
+    window.switchAuth = function(mode) {
 
-    const signInForm =
-      document.getElementById("signInForm");
+      const signInForm =
+        document.getElementById("signInForm");
 
-    const signUpForm =
-      document.getElementById("signUpForm");
+      const signUpForm =
+        document.getElementById("signUpForm");
 
-    const signInTab =
-      document.getElementById("signInTab");
+      const signInTab =
+        document.getElementById("signInTab");
 
-    const signUpTab =
-      document.getElementById("signUpTab");
+      const signUpTab =
+        document.getElementById("signUpTab");
 
-    if (!signInForm || !signUpForm) {
-      console.error("Authentication forms not found");
-      return;
-    }
 
-    if (mode === "signup") {
+      if (mode === "signup") {
 
-      signInForm.style.display = "none";
-      signUpForm.style.display = "block";
+        signInForm.classList.remove("active");
+        signUpForm.classList.add("active");
 
-      if (signInTab) {
         signInTab.classList.remove("active");
-      }
-
-      if (signUpTab) {
         signUpTab.classList.add("active");
-      }
 
-    } else {
+      } else {
 
-      signInForm.style.display = "block";
-      signUpForm.style.display = "none";
+        signUpForm.classList.remove("active");
+        signInForm.classList.add("active");
 
-      if (signInTab) {
-        signInTab.classList.add("active");
-      }
-
-      if (signUpTab) {
         signUpTab.classList.remove("active");
+        signInTab.classList.add("active");
+
+      }
+
+    };
+
+
+    /* FIREBASE ERROR */
+
+    function firebaseError(error) {
+
+      switch (error.code) {
+
+        case "auth/email-already-in-use":
+          return "This email is already registered.";
+
+        case "auth/invalid-email":
+          return "Please enter a valid email.";
+
+        case "auth/weak-password":
+          return "Password must be at least 6 characters.";
+
+        case "auth/invalid-credential":
+          return "Incorrect email or password.";
+
+        case "auth/user-not-found":
+          return "No account found with this email.";
+
+        case "auth/wrong-password":
+          return "Incorrect password.";
+
+        case "auth/network-request-failed":
+          return "Network connection problem.";
+
+        default:
+          return error.message || "Authentication failed.";
+
       }
 
     }
 
-  };
+
+    /* CREATE ACCOUNT */
+
+    window.handleSignUp = async function() {
+
+      const name =
+        document.getElementById("signupName").value.trim();
+
+      const email =
+        document.getElementById("signupEmail").value.trim();
+
+      const password =
+        document.getElementById("signupPassword").value;
 
 
-  /* ================================
-     ERROR MESSAGE
-  ================================= */
+      if (!name || !email || !password) {
 
-  function firebaseError(error) {
+        alert("Please fill all fields.");
 
-    const code = error?.code || "";
+        return;
 
-    switch (code) {
-
-      case "auth/email-already-in-use":
-        return "This email is already registered.";
-
-      case "auth/invalid-email":
-        return "Please enter a valid email address.";
-
-      case "auth/weak-password":
-        return "Password should be at least 6 characters.";
-
-      case "auth/invalid-credential":
-        return "Incorrect email or password.";
-
-      case "auth/user-not-found":
-        return "No account found with this email.";
-
-      case "auth/wrong-password":
-        return "Incorrect password.";
-
-      case "auth/network-request-failed":
-        return "Network error. Please check your internet connection.";
-
-      default:
-        return error?.message || "Authentication failed.";
-    }
-
-  }
+      }
 
 
-  /* ================================
-     CREATE ACCOUNT
-  ================================= */
+      try {
 
-  window.handleSignUp = async function () {
+        const result =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
 
-    const name =
-      document.getElementById("signupName")?.value.trim();
 
-    const email =
-      document.getElementById("signupEmail")?.value.trim();
-
-    const password =
-      document.getElementById("signupPassword")?.value;
-
-    if (!email || !password) {
-
-      alert("Please enter your email and password.");
-      return;
-
-    }
-
-    try {
-
-      const result =
-        await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
+        console.log(
+          "Account created:",
+          result.user.email
         );
 
-      console.log(
-        "Account created:",
-        result.user.email
-      );
 
-      alert("Account created successfully!");
-
-      window.closeAuth();
-
-      window.goToDashboard();
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert(firebaseError(error));
-
-    }
-
-  };
-
-
-  /* ================================
-     SIGN IN
-  ================================= */
-
-  window.handleSignIn = async function () {
-
-    const email =
-      document.getElementById("signinEmail")?.value.trim();
-
-    const password =
-      document.getElementById("signinPassword")?.value;
-
-    if (!email || !password) {
-
-      alert("Please enter your email and password.");
-      return;
-
-    }
-
-    try {
-
-      const result =
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
+        alert(
+          "Account created successfully!"
         );
 
-      console.log(
-        "Signed in:",
-        result.user.email
-      );
 
-      alert("Welcome to TwinCare AI!");
+        closeAuth();
 
-      window.closeAuth();
-
-      window.goToDashboard();
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert(firebaseError(error));
-
-    }
-
-  };
+        showDashboard();
 
 
-  /* ================================
-     SIGN OUT
-  ================================= */
+      } catch (error) {
 
-  window.handleSignOut = async function () {
+        console.error(error);
 
-    try {
+        alert(
+          firebaseError(error)
+        );
 
-      await signOut(auth);
+      }
 
-      console.log("User signed out.");
-
-      alert("You have been signed out.");
-
-      window.location.reload();
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert(firebaseError(error));
-
-    }
-
-  };
+    };
 
 
-  /* ================================
-     DASHBOARD
-  ================================= */
+    /* SIGN IN */
 
-  window.goToDashboard = function () {
+    window.handleSignIn = async function() {
 
-    const dashboard =
-      document.getElementById("dashboard");
+      const email =
+        document.getElementById("signinEmail").value.trim();
 
-    if (dashboard) {
+      const password =
+        document.getElementById("signinPassword").value;
 
-      dashboard.style.display = "block";
+
+      if (!email || !password) {
+
+        alert(
+          "Please enter email and password."
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        const result =
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+
+        console.log(
+          "Signed in:",
+          result.user.email
+        );
+
+
+        alert(
+          "Welcome to TwinCare AI!"
+        );
+
+
+        closeAuth();
+
+        showDashboard();
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          firebaseError(error)
+        );
+
+      }
+
+    };
+
+
+    /* LOGOUT */
+
+    window.handleSignOut = async function() {
+
+      try {
+
+        await signOut(auth);
+
+        document.getElementById(
+          "dashboard"
+        ).style.display = "none";
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+      }
+
+    };
+
+
+    /* DASHBOARD */
+
+    function showDashboard() {
+
+      const dashboard =
+        document.getElementById("dashboard");
+
+      dashboard.style.display =
+        "block";
+
 
       dashboard.scrollIntoView({
         behavior: "smooth"
       });
 
-      return;
     }
 
-    console.log(
-      "Dashboard section not found."
-    );
 
-  };
+    window.goToDashboard =
+      showDashboard;
 
 
-  /* ================================
-     AUTH STATE
-  ================================= */
+    /* AUTH STATE */
 
-  onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(
+      auth,
+      (user) => {
 
-    if (user) {
+        const userEmail =
+          document.getElementById("userEmail");
 
-      console.log(
-        "Logged in user:",
-        user.email
-      );
 
-      const userEmail =
-        document.getElementById("userEmail");
+        if (user) {
 
-      if (userEmail) {
-        userEmail.textContent =
-          user.email;
-      }
+          console.log(
+            "User logged in:",
+            user.email
+          );
 
-    } else {
 
-      console.log(
-        "No user currently signed in."
-      );
+          if (userEmail) {
 
-    }
+            userEmail.textContent =
+              user.email;
 
-  });
+          }
 
+        } else {
 
-  /* ================================
-     CHATBOT
-  ================================= */
-
-  window.sendChatMessage = async function () {
-
-    const input =
-      document.getElementById("chatInput");
-
-    const messages =
-      document.getElementById("chatMessages");
-
-    if (!input || !messages) {
-
-      console.error(
-        "Chat elements not found."
-      );
-
-      return;
-    }
-
-    const message =
-      input.value.trim();
-
-    if (!message) return;
-
-
-    /* USER MESSAGE */
-
-    const userMessage =
-      document.createElement("div");
-
-    userMessage.className =
-      "userMessage";
-
-    userMessage.textContent =
-      message;
-
-    messages.appendChild(
-      userMessage
-    );
-
-    input.value = "";
-
-    messages.scrollTop =
-      messages.scrollHeight;
-
-
-    /* TYPING */
-
-    const typing =
-      document.createElement("div");
-
-    typing.className =
-      "typing";
-
-    typing.textContent =
-      "TwinCare Assistant is thinking...";
-
-    messages.appendChild(
-      typing
-    );
-
-    messages.scrollTop =
-      messages.scrollHeight;
-
-
-    try {
-
-      const response =
-        await fetch("/api/chat", {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body: JSON.stringify({
-            message: message
-          })
-
-        });
-
-
-      /* READ SERVER RESPONSE */
-
-      const rawText =
-        await response.text();
-
-      let data = {};
-
-      try {
-
-        data =
-          JSON.parse(rawText);
-
-      } catch {
-
-        data = {
-          error:
-            rawText ||
-            "Invalid server response."
-        };
-
-      }
-
-
-      typing.remove();
-
-
-      /* SERVER ERROR */
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          `Server error (${response.status})`
-        );
-
-      }
-
-
-      /* EMPTY AI RESPONSE */
-
-      if (!data.reply) {
-
-        throw new Error(
-          "AI returned an empty response."
-        );
-
-      }
-
-
-      /* AI MESSAGE */
-
-      const botMessage =
-        document.createElement("div");
-
-      botMessage.className =
-        "botMessage";
-
-      botMessage.textContent =
-        data.reply;
-
-      messages.appendChild(
-        botMessage
-      );
-
-      messages.scrollTop =
-        messages.scrollHeight;
-
-
-    } catch (error) {
-
-      typing.remove();
-
-      const errorMessage =
-        document.createElement("div");
-
-      errorMessage.className =
-        "botMessage";
-
-      errorMessage.textContent =
-        "⚠️ " + error.message;
-
-      messages.appendChild(
-        errorMessage
-      );
-
-      messages.scrollTop =
-        messages.scrollHeight;
-
-      console.error(
-        "TwinCare chatbot error:",
-        error
-      );
-
-    }
-
-  };
-
-
-  /* ================================
-     CHATBOT ENTER KEY
-  ================================= */
-
-  const chatInput =
-    document.getElementById("chatInput");
-
-  if (chatInput) {
-
-    chatInput.addEventListener(
-      "keydown",
-      (event) => {
-
-        if (
-          event.key === "Enter" &&
-          !event.shiftKey
-        ) {
-
-          event.preventDefault();
-
-          window.sendChatMessage();
+          console.log(
+            "No authenticated user."
+          );
 
         }
 
       }
     );
 
-  }
+
+    /* CHATBOT OPEN */
+
+    window.openChatbot = function() {
+
+      const chat =
+        document.getElementById("chatWindow");
+
+      chat.style.display =
+        "flex";
+
+    };
 
 
-  console.log(
-    "TwinCare AI initialized successfully."
-  );
+    /* CHATBOT CLOSE */
 
-</script>
+    window.closeChatbot = function() {
+
+      const chat =
+        document.getElementById("chatWindow");
+
+      chat.style.display =
+        "none";
+
+    };
+
+
+    /* CHATBOT */
+
+    window.sendChatMessage = async function() {
+
+      const input =
+        document.getElementById("chatInput");
+
+      const messages =
+        document.getElementById("chatMessages");
+
+
+      if (!input || !messages) {
+
+        console.error(
+          "Chat elements not found."
+        );
+
+        return;
+
+      }
+
+
+      const message =
+        input.value.trim();
+
+
+      if (!message) return;
+
+
+      /* USER MESSAGE */
+
+      const userMessage =
+        document.createElement("div");
+
+      userMessage.className =
+        "userMessage";
+
+      userMessage.textContent =
+        message;
+
+      messages.appendChild(
+        userMessage
+      );
+
+
+      input.value = "";
+
+
+      messages.scrollTop =
+        messages.scrollHeight;
+
+
+      /* TYPING */
+
+      const typing =
+        document.createElement("div");
+
+      typing.className =
+        "typing";
+
+      typing.textContent =
+        "TwinCare Assistant is thinking...";
+
+      messages.appendChild(
+        typing
+      );
+
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/chat",
+            {
+
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+                message: message
+              })
+
+            }
+          );
+
+
+        const rawText =
+          await response.text();
+
+
+        let data;
+
+
+        try {
+
+          data =
+            JSON.parse(rawText);
+
+        } catch {
+
+          data = {
+            error:
+              rawText ||
+              "Invalid server response."
+          };
+
+        }
+
+
+        typing.remove();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            `Server error (${response.status})`
+          );
+
+        }
+
+
+        if (!data.reply) {
+
+          throw new Error(
+            "AI returned an empty response."
+          );
+
+        }
+
+
+        const botMessage =
+          document.createElement("div");
+
+        botMessage.className =
+          "botMessage";
+
+        botMessage.textContent =
+          data.reply;
+
+
+        messages.appendChild(
+          botMessage
+        );
+
+
+        messages.scrollTop =
+          messages.scrollHeight;
+
+
+      } catch (error) {
+
+        typing.remove();
+
+
+        const errorMessage =
+          document.createElement("div");
+
+        errorMessage.className =
+          "botMessage";
+
+        errorMessage.textContent =
+          "⚠️ " + error.message;
+
+
+        messages.appendChild(
+          errorMessage
+        );
+
+
+        messages.scrollTop =
+          messages.scrollHeight;
+
+
+        console.error(
+          "TwinCare chatbot error:",
+          error
+        );
+
+      }
+
+    };
+
+
+    /* ENTER KEY */
+
+    document
+      .getElementById("chatInput")
+      .addEventListener(
+        "keydown",
+        function(event) {
+
+          if (
+            event.key === "Enter"
+          ) {
+
+            event.preventDefault();
+
+            window.sendChatMessage();
+
+          }
+
+        }
+      );
+
+
+    console.log(
+      "TwinCare AI loaded successfully."
+    );
+
+  </script>
+
+</body>
+</html>
