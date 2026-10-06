@@ -1,89 +1,568 @@
 <script type="module">
-  // Keep your existing Firebase imports and authentication code above this.
 
-  window.sendChatMessage = async function () {
-    const input = document.getElementById("chatInput");
-    const messages = document.getElementById("chatMessages");
+  /* ================================
+     FIREBASE
+  ================================= */
 
-    if (!input || !messages) {
-      console.error("Chat elements not found.");
+  import {
+    initializeApp
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+
+  /* ================================
+     FIREBASE CONFIG
+  ================================= */
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBzKOCTQ55EodlvAF712d_GlVlA8UTHJrk",
+    authDomain: "twincare-ai-7a018.firebaseapp.com",
+    projectId: "twincare-ai-7a018",
+    storageBucket: "twincare-ai-7a018.firebasestorage.app",
+    messagingSenderId: "706086757079",
+    appId: "1:706086757079:web:4364bf7774867f503d8692",
+    measurementId: "G-3QHSG2CCM8"
+  };
+
+
+  /* ================================
+     INITIALIZE FIREBASE
+  ================================= */
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+
+  /* ================================
+     AUTH MODAL
+  ================================= */
+
+  window.openAuth = function (mode = "signin") {
+
+    const modal = document.getElementById("authModal");
+
+    if (!modal) {
+      console.error("authModal not found");
       return;
     }
 
-    const message = input.value.trim();
+    modal.style.display = "flex";
+
+    window.switchAuth(mode);
+  };
+
+
+  window.closeAuth = function () {
+
+    const modal = document.getElementById("authModal");
+
+    if (modal) {
+      modal.style.display = "none";
+    }
+
+  };
+
+
+  window.switchAuth = function (mode) {
+
+    const signInForm =
+      document.getElementById("signInForm");
+
+    const signUpForm =
+      document.getElementById("signUpForm");
+
+    const signInTab =
+      document.getElementById("signInTab");
+
+    const signUpTab =
+      document.getElementById("signUpTab");
+
+    if (!signInForm || !signUpForm) {
+      console.error("Authentication forms not found");
+      return;
+    }
+
+    if (mode === "signup") {
+
+      signInForm.style.display = "none";
+      signUpForm.style.display = "block";
+
+      if (signInTab) {
+        signInTab.classList.remove("active");
+      }
+
+      if (signUpTab) {
+        signUpTab.classList.add("active");
+      }
+
+    } else {
+
+      signInForm.style.display = "block";
+      signUpForm.style.display = "none";
+
+      if (signInTab) {
+        signInTab.classList.add("active");
+      }
+
+      if (signUpTab) {
+        signUpTab.classList.remove("active");
+      }
+
+    }
+
+  };
+
+
+  /* ================================
+     ERROR MESSAGE
+  ================================= */
+
+  function firebaseError(error) {
+
+    const code = error?.code || "";
+
+    switch (code) {
+
+      case "auth/email-already-in-use":
+        return "This email is already registered.";
+
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+
+      case "auth/weak-password":
+        return "Password should be at least 6 characters.";
+
+      case "auth/invalid-credential":
+        return "Incorrect email or password.";
+
+      case "auth/user-not-found":
+        return "No account found with this email.";
+
+      case "auth/wrong-password":
+        return "Incorrect password.";
+
+      case "auth/network-request-failed":
+        return "Network error. Please check your internet connection.";
+
+      default:
+        return error?.message || "Authentication failed.";
+    }
+
+  }
+
+
+  /* ================================
+     CREATE ACCOUNT
+  ================================= */
+
+  window.handleSignUp = async function () {
+
+    const name =
+      document.getElementById("signupName")?.value.trim();
+
+    const email =
+      document.getElementById("signupEmail")?.value.trim();
+
+    const password =
+      document.getElementById("signupPassword")?.value;
+
+    if (!email || !password) {
+
+      alert("Please enter your email and password.");
+      return;
+
+    }
+
+    try {
+
+      const result =
+        await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      console.log(
+        "Account created:",
+        result.user.email
+      );
+
+      alert("Account created successfully!");
+
+      window.closeAuth();
+
+      window.goToDashboard();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(firebaseError(error));
+
+    }
+
+  };
+
+
+  /* ================================
+     SIGN IN
+  ================================= */
+
+  window.handleSignIn = async function () {
+
+    const email =
+      document.getElementById("signinEmail")?.value.trim();
+
+    const password =
+      document.getElementById("signinPassword")?.value;
+
+    if (!email || !password) {
+
+      alert("Please enter your email and password.");
+      return;
+
+    }
+
+    try {
+
+      const result =
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      console.log(
+        "Signed in:",
+        result.user.email
+      );
+
+      alert("Welcome to TwinCare AI!");
+
+      window.closeAuth();
+
+      window.goToDashboard();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(firebaseError(error));
+
+    }
+
+  };
+
+
+  /* ================================
+     SIGN OUT
+  ================================= */
+
+  window.handleSignOut = async function () {
+
+    try {
+
+      await signOut(auth);
+
+      console.log("User signed out.");
+
+      alert("You have been signed out.");
+
+      window.location.reload();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(firebaseError(error));
+
+    }
+
+  };
+
+
+  /* ================================
+     DASHBOARD
+  ================================= */
+
+  window.goToDashboard = function () {
+
+    const dashboard =
+      document.getElementById("dashboard");
+
+    if (dashboard) {
+
+      dashboard.style.display = "block";
+
+      dashboard.scrollIntoView({
+        behavior: "smooth"
+      });
+
+      return;
+    }
+
+    console.log(
+      "Dashboard section not found."
+    );
+
+  };
+
+
+  /* ================================
+     AUTH STATE
+  ================================= */
+
+  onAuthStateChanged(auth, (user) => {
+
+    if (user) {
+
+      console.log(
+        "Logged in user:",
+        user.email
+      );
+
+      const userEmail =
+        document.getElementById("userEmail");
+
+      if (userEmail) {
+        userEmail.textContent =
+          user.email;
+      }
+
+    } else {
+
+      console.log(
+        "No user currently signed in."
+      );
+
+    }
+
+  });
+
+
+  /* ================================
+     CHATBOT
+  ================================= */
+
+  window.sendChatMessage = async function () {
+
+    const input =
+      document.getElementById("chatInput");
+
+    const messages =
+      document.getElementById("chatMessages");
+
+    if (!input || !messages) {
+
+      console.error(
+        "Chat elements not found."
+      );
+
+      return;
+    }
+
+    const message =
+      input.value.trim();
 
     if (!message) return;
 
-    // User message
-    const userMessage = document.createElement("div");
-    userMessage.className = "userMessage";
-    userMessage.textContent = message;
-    messages.appendChild(userMessage);
+
+    /* USER MESSAGE */
+
+    const userMessage =
+      document.createElement("div");
+
+    userMessage.className =
+      "userMessage";
+
+    userMessage.textContent =
+      message;
+
+    messages.appendChild(
+      userMessage
+    );
 
     input.value = "";
-    messages.scrollTop = messages.scrollHeight;
 
-    // Typing indicator
-    const typing = document.createElement("div");
-    typing.className = "typing";
-    typing.textContent = "TwinCare Assistant is thinking...";
-    messages.appendChild(typing);
+    messages.scrollTop =
+      messages.scrollHeight;
 
-    messages.scrollTop = messages.scrollHeight;
+
+    /* TYPING */
+
+    const typing =
+      document.createElement("div");
+
+    typing.className =
+      "typing";
+
+    typing.textContent =
+      "TwinCare Assistant is thinking...";
+
+    messages.appendChild(
+      typing
+    );
+
+    messages.scrollTop =
+      messages.scrollHeight;
+
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: message
-        })
-      });
 
-      const rawText = await response.text();
+      const response =
+        await fetch("/api/chat", {
 
-      let data;
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            message: message
+          })
+
+        });
+
+
+      /* READ SERVER RESPONSE */
+
+      const rawText =
+        await response.text();
+
+      let data = {};
 
       try {
-        data = JSON.parse(rawText);
+
+        data =
+          JSON.parse(rawText);
+
       } catch {
+
         data = {
-          error: rawText || "Invalid server response."
+          error:
+            rawText ||
+            "Invalid server response."
         };
+
       }
 
+
       typing.remove();
+
+
+      /* SERVER ERROR */
 
       if (!response.ok) {
+
         throw new Error(
-          data.error || `Server error (${response.status})`
+          data.error ||
+          `Server error (${response.status})`
         );
+
       }
+
+
+      /* EMPTY AI RESPONSE */
 
       if (!data.reply) {
-        throw new Error("AI returned an empty response.");
+
+        throw new Error(
+          "AI returned an empty response."
+        );
+
       }
 
-      const botMessage = document.createElement("div");
-      botMessage.className = "botMessage";
-      botMessage.textContent = data.reply;
 
-      messages.appendChild(botMessage);
-      messages.scrollTop = messages.scrollHeight;
+      /* AI MESSAGE */
+
+      const botMessage =
+        document.createElement("div");
+
+      botMessage.className =
+        "botMessage";
+
+      botMessage.textContent =
+        data.reply;
+
+      messages.appendChild(
+        botMessage
+      );
+
+      messages.scrollTop =
+        messages.scrollHeight;
+
 
     } catch (error) {
+
       typing.remove();
 
-      const errorMessage = document.createElement("div");
-      errorMessage.className = "botMessage";
-      errorMessage.textContent = "⚠️ " + error.message;
+      const errorMessage =
+        document.createElement("div");
 
-      messages.appendChild(errorMessage);
-      messages.scrollTop = messages.scrollHeight;
+      errorMessage.className =
+        "botMessage";
 
-      console.error("TwinCare chatbot error:", error);
+      errorMessage.textContent =
+        "⚠️ " + error.message;
+
+      messages.appendChild(
+        errorMessage
+      );
+
+      messages.scrollTop =
+        messages.scrollHeight;
+
+      console.error(
+        "TwinCare chatbot error:",
+        error
+      );
+
     }
+
   };
+
+
+  /* ================================
+     CHATBOT ENTER KEY
+  ================================= */
+
+  const chatInput =
+    document.getElementById("chatInput");
+
+  if (chatInput) {
+
+    chatInput.addEventListener(
+      "keydown",
+      (event) => {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+
+          event.preventDefault();
+
+          window.sendChatMessage();
+
+        }
+
+      }
+    );
+
+  }
+
+
+  console.log(
+    "TwinCare AI initialized successfully."
+  );
+
 </script>
