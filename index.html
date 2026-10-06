@@ -1,0 +1,318 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TwinCare AI | Digital Health Twin</title>
+
+    <link rel="stylesheet" href="public/style.css">
+</head>
+
+<body>
+
+    <header class="hero">
+        <div class="hero-content">
+            <p class="eyebrow">AI • DIGITAL HEALTH • PERSONALIZED MONITORING</p>
+
+            <h1>
+                TwinCare <span>AI</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                An individual patient Digital Twin prototype for
+                health monitoring, simulation and personalized insights.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="#dashboard" class="btn primary">
+                    Explore Dashboard
+                </a>
+
+                <a href="https://twincare-ai.onrender.com"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn secondary">
+                    Open Live App
+                </a>
+            </div>
+        </div>
+    </header>
+
+
+    <main id="dashboard">
+
+        <!-- Dashboard -->
+        <section class="section">
+            <div class="section-heading">
+                <p class="eyebrow">PATIENT DIGITAL TWIN</p>
+                <h2>Health Overview</h2>
+                <p>
+                    Synthetic demonstration data representing an
+                    individual patient's health state.
+                </p>
+            </div>
+
+            <div class="metric-grid">
+
+                <div class="metric-card">
+                    <span>Blood Pressure</span>
+                    <strong id="bpValue">--/--</strong>
+                    <small>mmHg</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>Heart Rate</span>
+                    <strong id="hrValue">--</strong>
+                    <small>BPM</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>Sleep</span>
+                    <strong id="sleepValue">--</strong>
+                    <small>hours</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>Twin Status</span>
+                    <strong id="twinStatus">--</strong>
+                    <small id="modelState">Waiting</small>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- Data Streams -->
+        <section class="section">
+            <div class="section-heading">
+                <p class="eyebrow">DATA STREAMS</p>
+                <h2>Update Digital Twin</h2>
+            </div>
+
+            <div class="two-column">
+
+                <div class="glass-card">
+                    <h3>Add Health Measurement</h3>
+
+                    <div class="form-grid">
+
+                        <input
+                            type="number"
+                            id="systolic"
+                            placeholder="Systolic BP"
+                        >
+
+                        <input
+                            type="number"
+                            id="diastolic"
+                            placeholder="Diastolic BP"
+                        >
+
+                        <input
+                            type="number"
+                            id="hr"
+                            placeholder="Heart Rate"
+                        >
+
+                        <input
+                            type="number"
+                            step="0.1"
+                            id="sleepInput"
+                            placeholder="Sleep Hours"
+                        >
+
+                    </div>
+
+                    <button
+                        class="btn primary"
+                        onclick="updateTwin()">
+                        Update Digital Twin
+                    </button>
+
+                    <button
+                        class="btn secondary"
+                        onclick="simulateWearable()">
+                        Simulate Wearable Reading
+                    </button>
+
+                    <p id="message" class="message"></p>
+                </div>
+
+
+                <div class="glass-card">
+                    <h3>Digital Twin State</h3>
+
+                    <div class="twin-visual">
+                        <div class="twin-circle">
+                            <span>AI</span>
+                            <strong>TWIN</strong>
+                        </div>
+                    </div>
+
+                    <p>
+                        The prototype combines historical and
+                        simulated health measurements to maintain
+                        a continuously updated digital representation.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- Timeline -->
+        <section class="section">
+            <div class="section-heading">
+                <p class="eyebrow">HEALTH HISTORY</p>
+                <h2>Digital Twin Timeline</h2>
+            </div>
+
+            <div id="timeline" class="timeline"></div>
+        </section>
+
+
+        <!-- What If -->
+        <section class="section">
+            <div class="section-heading">
+                <p class="eyebrow">SIMULATION LAB</p>
+                <h2>What-If Scenario</h2>
+                <p>
+                    Explore an illustrative scenario using
+                    activity and sleep inputs.
+                </p>
+            </div>
+
+            <div class="glass-card scenario-card">
+
+                <label>
+                    Activity Level:
+                    <strong>
+                        <span id="activityValue">30</span>%
+                    </strong>
+                </label>
+
+                <input
+                    type="range"
+                    id="activity"
+                    min="0"
+                    max="100"
+                    value="30"
+                    oninput="updateScenario()"
+                >
+
+
+                <label>
+                    Sleep:
+                    <strong>
+                        <span id="scenarioSleepValue">7</span>
+                        hours
+                    </strong>
+                </label>
+
+                <input
+                    type="range"
+                    id="scenarioSleep"
+                    min="4"
+                    max="10"
+                    step="0.5"
+                    value="7"
+                    oninput="updateScenario()"
+                >
+
+                <div class="scenario-result">
+                    <span>Illustrative Scenario Score</span>
+                    <strong id="scenarioScore">50</strong>
+                </div>
+
+                <p class="disclaimer">
+                    This simulation is for demonstration only and
+                    is not a clinically validated prediction.
+                </p>
+
+            </div>
+        </section>
+
+
+        <!-- Resources -->
+        <section class="section">
+            <div class="section-heading">
+                <p class="eyebrow">HEALTH RESOURCES</p>
+                <h2>Resource Explorer</h2>
+                <p>
+                    Search for educational health resources.
+                </p>
+            </div>
+
+            <div class="glass-card">
+
+                <div class="search-box">
+                    <input
+                        type="text"
+                        id="searchTopic"
+                        placeholder="Example: hypertension"
+                    >
+
+                    <button
+                        class="btn primary"
+                        onclick="searchResources()">
+                        Search
+                    </button>
+                </div>
+
+                <div id="resources" class="resources">
+                    <p>
+                        Enter a health topic to search resources.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- Export -->
+        <section class="section">
+            <div class="glass-card export-card">
+
+                <div>
+                    <p class="eyebrow">DEMO DATA</p>
+                    <h2>Export Digital Twin Data</h2>
+
+                    <p>
+                        Download the synthetic demonstration
+                        measurements as a JSON file.
+                    </p>
+                </div>
+
+                <button
+                    class="btn primary"
+                    onclick="exportData()">
+                    Export JSON
+                </button>
+
+            </div>
+        </section>
+
+    </main>
+
+
+    <footer class="footer">
+        <h3>TwinCare AI</h3>
+
+        <p>
+            Individual Patient Digital Twin Prototype
+        </p>
+
+        <p class="disclaimer">
+            ⚠️ Demo only. Uses synthetic data and is not intended
+            for diagnosis, treatment or clinical decision-making.
+        </p>
+    </footer>
+
+
+    <script src="public/app.js"></script>
+
+</body>
+</html>
+```
