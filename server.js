@@ -4,9 +4,14 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+/* ================================
+   MIDDLEWARE
+================================ */
+
 app.use(express.json());
 
 app.use(express.static("public"));
+
 
 /* ================================
    HEALTH CHECK
@@ -22,20 +27,25 @@ app.get("/api/health", (req, res) => {
 
 
 /* ================================
-   RESOURCE SEARCH
+   RESOURCE SEARCH - SERPAPI
 ================================ */
 
 app.get("/api/resources", async (req, res) => {
 
   try {
 
-    const condition =
-      String(
-        req.query.condition || "hypertension"
-      ).trim();
+    const condition = String(
+      req.query.condition || "hypertension"
+    ).trim();
 
-    const apiKey =
-      process.env.SERPAPI_KEY;
+    const apiKey = String(
+      process.env.SERPAPI_KEY || ""
+    ).trim();
+
+    console.log(
+      "SERPAPI KEY EXISTS:",
+      apiKey.length > 0
+    );
 
     if (!apiKey) {
 
@@ -45,30 +55,34 @@ app.get("/api/resources", async (req, res) => {
 
     }
 
-    const params =
-      new URLSearchParams({
-        engine: "google",
-        q: `${condition} health education`,
-        api_key: apiKey
-      });
+    const params = new URLSearchParams({
+      engine: "google",
+      q: `${condition} health education`,
+      api_key: apiKey
+    });
 
-    const response =
-      await fetch(
-        `https://serpapi.com/search.json?${params}`
-      );
+    const response = await fetch(
+      `https://serpapi.com/search.json?${params}`
+    );
 
-    const data =
-      await response.json();
+    const data = await response.json();
+
+    console.log(
+      "SerpApi HTTP status:",
+      response.status
+    );
 
     if (!response.ok) {
 
       console.error(
         "SerpApi error:",
-        data
+        JSON.stringify(data)
       );
 
       return res.status(502).json({
-        error: "SerpApi request failed."
+        error:
+          data?.error ||
+          `SerpApi request failed with HTTP ${response.status}`
       });
 
     }
@@ -76,13 +90,13 @@ app.get("/api/resources", async (req, res) => {
     const results =
       (data.organic_results || [])
         .slice(0, 5)
-        .map(item => ({
-          title: item.title,
-          link: item.link,
-          snippet: item.snippet
+        .map((item) => ({
+          title: item.title || "Untitled",
+          link: item.link || "#",
+          snippet: item.snippet || ""
         }));
 
-    res.json({
+    return res.json({
       condition,
       results
     });
@@ -94,8 +108,10 @@ app.get("/api/resources", async (req, res) => {
       error
     );
 
-    res.status(500).json({
-      error: "Unable to retrieve resources."
+    return res.status(500).json({
+      error:
+        error.message ||
+        "Unable to retrieve resources."
     });
 
   }
@@ -104,17 +120,18 @@ app.get("/api/resources", async (req, res) => {
 
 
 /* ================================
-   AI CHATBOT
+   AI CHATBOT - GEMINI
 ================================ */
 
 app.post("/api/chat", async (req, res) => {
 
   try {
 
-    const message =
-      String(
-        req.body?.message || ""
-      ).trim();
+    /* GET USER MESSAGE */
+
+    const message = String(
+      req.body?.message || ""
+    ).trim();
 
 
     if (!message) {
@@ -126,15 +143,29 @@ app.post("/api/chat", async (req, res) => {
     }
 
 
-    /* GET GEMINI KEY */
+    /* ================================
+       GET GEMINI API KEY
+    ================================= */
 
-    const apiKey =
-      process.env.GEMINI_API_KEY;
+    const apiKey = String(
+      process.env.GEMINI_API_KEY || ""
+    ).trim();
 
+
+    /*
+       SAFE DEBUGGING
+
+       We NEVER print the actual API key.
+    */
 
     console.log(
-      "Gemini key detected:",
-      Boolean(apiKey)
+      "GEMINI KEY EXISTS:",
+      apiKey.length > 0
+    );
+
+    console.log(
+      "GEMINI KEY LENGTH:",
+      apiKey.length
     );
 
 
@@ -148,27 +179,33 @@ app.post("/api/chat", async (req, res) => {
     }
 
 
-    /* AI PROMPT */
+    /* ================================
+       AI PROMPT
+    ================================= */
 
     const prompt = `
 You are TwinCare Assistant.
 
-You are an educational AI assistant
-inside a student-built Digital Health Twin
-prototype.
+You are an educational AI assistant inside
+a student-built Digital Health Twin prototype.
 
-Give clear and simple health education.
+Your role is to provide simple, clear,
+general health education.
 
-Rules:
+IMPORTANT SAFETY RULES:
 
 - Do not diagnose diseases.
 - Do not prescribe medicines.
 - Do not recommend changing medicine doses.
-- Do not claim clinical validation.
-- Treat TwinCare measurements as synthetic demo data.
-- Encourage users to consult qualified healthcare
-  professionals for personal medical decisions.
-- For emergencies, advise seeking urgent medical care.
+- Do not claim that the Digital Twin is clinically validated.
+- Treat TwinCare measurements as synthetic demonstration data.
+- Do not present simulated values as real patient measurements.
+- Encourage users to consult qualified healthcare professionals
+  for personal medical decisions.
+- For urgent or emergency symptoms, advise seeking immediate
+  medical attention.
+
+Keep responses clear and easy to understand.
 
 User question:
 
@@ -176,53 +213,56 @@ ${message}
 `;
 
 
-    /* GEMINI REQUEST */
+    /* ================================
+       GEMINI API REQUEST
+    ================================= */
 
-    const response =
-      await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        {
-          method: "POST",
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey
-          },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
+        },
 
-          body: JSON.stringify({
+        body: JSON.stringify({
 
-            contents: [
-              {
-                role: "user",
+          contents: [
+            {
+              role: "user",
 
-                parts: [
-                  {
-                    text: prompt
-                  }
-                ]
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ]
 
-              }
-            ]
+        })
 
-          })
-
-        }
-      );
+      }
+    );
 
 
-    /* READ RESPONSE */
+    /* ================================
+       READ GEMINI RESPONSE
+    ================================= */
 
-    const data =
-      await response.json();
+    const data = await response.json();
 
 
     console.log(
-      "Gemini status:",
+      "Gemini HTTP status:",
       response.status
     );
 
 
-    /* GEMINI ERROR */
+    /* ================================
+       GEMINI API ERROR
+    ================================= */
 
     if (!response.ok) {
 
@@ -232,17 +272,17 @@ ${message}
       );
 
       return res.status(502).json({
-
         error:
           data?.error?.message ||
-          "Gemini API request failed."
-
+          `Gemini API failed with HTTP ${response.status}`
       });
 
     }
 
 
-    /* GET AI TEXT */
+    /* ================================
+       EXTRACT AI RESPONSE
+    ================================= */
 
     const reply =
       data?.candidates?.[0]
@@ -254,7 +294,7 @@ ${message}
     if (!reply) {
 
       console.error(
-        "Gemini response:",
+        "Unexpected Gemini response:",
         JSON.stringify(data)
       );
 
@@ -266,14 +306,15 @@ ${message}
     }
 
 
-    /* SEND AI RESPONSE */
+    /* ================================
+       SEND RESPONSE TO FRONTEND
+    ================================= */
 
     return res.json({
 
       reply: reply.trim()
 
     });
-
 
   } catch (error) {
 
