@@ -1,362 +1,84 @@
-const express = require("express");
-
-const app = express();
-
-const PORT = process.env.PORT || 3000;
-
-/* ================================
-   MIDDLEWARE
-================================ */
-
-app.use(express.json());
-
-app.use(express.static("public"));
-
-
-/* ================================
-   HEALTH CHECK
-================================ */
-
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "online",
-    application: "TwinCare AI",
-    message: "Backend is running"
-  });
-});
-
-
-/* ================================
-   RESOURCE SEARCH - SERPAPI
-================================ */
-
-app.get("/api/resources", async (req, res) => {
-
-  try {
-
-    const condition = String(
-      req.query.condition || "hypertension"
-    ).trim();
-
-    const apiKey = String(
-      process.env.SERPAPI_KEY || ""
-    ).trim();
-
-    console.log(
-      "SERPAPI KEY EXISTS:",
-      apiKey.length > 0
-    );
-
-    if (!apiKey) {
-
-      return res.status(500).json({
-        error: "SERPAPI_KEY is not configured."
-      });
-
-    }
-
-    const params = new URLSearchParams({
-      engine: "google",
-      q: `${condition} health education`,
-      api_key: apiKey
-    });
-
-    const response = await fetch(
-      `https://serpapi.com/search.json?${params}`
-    );
-
-    const data = await response.json();
-
-    console.log(
-      "SerpApi HTTP status:",
-      response.status
-    );
-
-    if (!response.ok) {
-
-      console.error(
-        "SerpApi error:",
-        JSON.stringify(data)
-      );
-
-      return res.status(502).json({
-        error:
-          data?.error ||
-          `SerpApi request failed with HTTP ${response.status}`
-      });
-
-    }
-
-    const results =
-      (data.organic_results || [])
-        .slice(0, 5)
-        .map((item) => ({
-          title: item.title || "Untitled",
-          link: item.link || "#",
-          snippet: item.snippet || ""
-        }));
-
-    return res.json({
-      condition,
-      results
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Resource error:",
-      error
-    );
-
-    return res.status(500).json({
-      error:
-        error.message ||
-        "Unable to retrieve resources."
-    });
-
-  }
-
-});
-
-
-/* ================================
-   AI CHATBOT - GEMINI
-================================ */
-
-app.post("/api/chat", async (req, res) => {
-
-  try {
-
-    /* GET USER MESSAGE */
-
-    const message = String(
-      req.body?.message || ""
-    ).trim();
-
-
-    if (!message) {
-
-      return res.status(400).json({
-        error: "Message is required."
-      });
-
-    }
-
-
-    /* ================================
-       GET GEMINI API KEY
-    ================================= */
-
-    const apiKey = String(
-      process.env.GEMINI_API_KEY || ""
-    ).trim();
-
-
-    /*
-       SAFE DEBUGGING
-
-       We NEVER print the actual API key.
-    */
-
-    console.log(
-      "GEMINI KEY EXISTS:",
-      apiKey.length > 0
-    );
-
-    console.log(
-      "GEMINI KEY LENGTH:",
-      apiKey.length
-    );
-
-
-    if (!apiKey) {
-
-      return res.status(500).json({
-        error:
-          "GEMINI_API_KEY is not available to the server."
-      });
-
-    }
-
-
-    /* ================================
-       AI PROMPT
-    ================================= */
-
-    const prompt = `
-You are TwinCare Assistant.
-
-You are an educational AI assistant inside
-a student-built Digital Health Twin prototype.
-
-Your role is to provide simple, clear,
-general health education.
-
-IMPORTANT SAFETY RULES:
-
-- Do not diagnose diseases.
-- Do not prescribe medicines.
-- Do not recommend changing medicine doses.
-- Do not claim that the Digital Twin is clinically validated.
-- Treat TwinCare measurements as synthetic demonstration data.
-- Do not present simulated values as real patient measurements.
-- Encourage users to consult qualified healthcare professionals
-  for personal medical decisions.
-- For urgent or emergency symptoms, advise seeking immediate
-  medical attention.
-
-Keep responses clear and easy to understand.
-
-User question:
+const prompt = `
+You are TwinCare Assistant, the AI analysis layer of a
+student-built Digital Health Twin prototype.
+
+Your job is to analyze the user's SYNTHETIC DEMONSTRATION
+health data and provide an educational health summary.
+
+The system may provide:
+- Blood pressure
+- Heart rate
+- Sleep duration
+- Physical activity
+- Weight
+- Stress level
+- Blood glucose
+- SpO2
+- Lifestyle information
+- Historical trends
+
+IMPORTANT:
+
+1. This is a student prototype using synthetic/demo data.
+2. Do NOT diagnose any disease.
+3. Do NOT claim that a person definitely has a medical condition.
+4. Do NOT prescribe medicines or recommend changing medication.
+5. Do NOT give medication doses.
+6. Do NOT present the AI analysis as a medical diagnosis.
+7. Clearly distinguish between observed measurements,
+   possible risk indicators, and confirmed medical conditions.
+8. Recommend professional medical evaluation when appropriate.
+9. For potentially urgent symptoms or dangerously abnormal
+   measurements, recommend seeking prompt medical care.
+10. Never invent measurements that were not provided.
+
+When enough data is available, structure your response as:
+
+## Health Overview
+Give a short summary of the current health pattern.
+
+## Key Observations
+List important measurements or trends.
+
+## Possible Risk Indicators
+Explain what patterns MAY indicate increased health risk.
+Use cautious language such as:
+- "may be associated with"
+- "could indicate"
+- "is worth monitoring"
+
+Do NOT call these diagnoses.
+
+## Why This Was Flagged
+Explain the relationship between the observed trends
+and the possible risk area in simple language.
+
+## Recommended Precautions
+Give practical, general health actions such as:
+- regular monitoring
+- balanced diet
+- reducing excessive salt
+- regular age-appropriate physical activity
+- adequate sleep
+- stress management
+- avoiding tobacco exposure
+
+Do not give dangerous or extreme recommendations.
+
+## What To Monitor
+Suggest which measurements or lifestyle factors should
+be tracked over time.
+
+## When To Seek Professional Advice
+Explain when the user should discuss the pattern with
+a qualified healthcare professional.
+
+## Important Disclaimer
+End with:
+"This analysis is for educational purposes only and does
+not diagnose or treat medical conditions."
+
+User's synthetic Digital Twin data:
 
 ${message}
 `;
-
-
-    /* ================================
-       GEMINI API REQUEST
-    ================================= */
-
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
-        },
-
-        body: JSON.stringify({
-
-          contents: [
-            {
-              role: "user",
-
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ]
-
-        })
-
-      }
-    );
-
-
-    /* ================================
-       READ GEMINI RESPONSE
-    ================================= */
-
-    const data = await response.json();
-
-
-    console.log(
-      "Gemini HTTP status:",
-      response.status
-    );
-
-
-    /* ================================
-       GEMINI API ERROR
-    ================================= */
-
-    if (!response.ok) {
-
-      console.error(
-        "Gemini API error:",
-        JSON.stringify(data)
-      );
-
-      return res.status(502).json({
-        error:
-          data?.error?.message ||
-          `Gemini API failed with HTTP ${response.status}`
-      });
-
-    }
-
-
-    /* ================================
-       EXTRACT AI RESPONSE
-    ================================= */
-
-    const reply =
-      data?.candidates?.[0]
-        ?.content
-        ?.parts?.[0]
-        ?.text;
-
-
-    if (!reply) {
-
-      console.error(
-        "Unexpected Gemini response:",
-        JSON.stringify(data)
-      );
-
-      return res.status(502).json({
-        error:
-          "Gemini returned no response."
-      });
-
-    }
-
-
-    /* ================================
-       SEND RESPONSE TO FRONTEND
-    ================================= */
-
-    return res.json({
-
-      reply: reply.trim()
-
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Chatbot error:",
-      error
-    );
-
-    return res.status(500).json({
-
-      error:
-        error.message ||
-        "Unable to contact Gemini."
-
-    });
-
-  }
-
-});
-
-
-/* ================================
-   START SERVER
-================================ */
-
-app.listen(
-  PORT,
-  () => {
-
-    console.log(
-      `TwinCare AI running on port ${PORT}`
-    );
-
-    console.log(
-      "Gemini configured:",
-      Boolean(process.env.GEMINI_API_KEY)
-    );
-
-    console.log(
-      "SerpApi configured:",
-      Boolean(process.env.SERPAPI_KEY)
-    );
-
-  }
-);
