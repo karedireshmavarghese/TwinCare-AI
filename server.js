@@ -3,6 +3,10 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/* =========================================================
+   BASIC MIDDLEWARE
+========================================================= */
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static("public"));
 
@@ -19,7 +23,7 @@ app.get("/api/health", (req, res) => {
 });
 
 /* =========================================================
-   RESOURCE EXPLORER - SERPAPI
+   SERPAPI - RESOURCE EXPLORER
 ========================================================= */
 
 app.get("/api/resources", async (req, res) => {
@@ -34,22 +38,28 @@ app.get("/api/resources", async (req, res) => {
 
     const condition = req.query.condition || "hypertension";
 
+    const searchQuery =
+      `${condition} health monitoring prevention ` +
+      `reliable medical information`;
+
     const url =
       "https://serpapi.com/search.json" +
       "?engine=google" +
       "&q=" +
-      encodeURIComponent(
-        `${condition} health monitoring prevention reliable medical information`
-      ) +
+      encodeURIComponent(searchQuery) +
       "&api_key=" +
       encodeURIComponent(apiKey);
 
     const response = await fetch(url);
     const data = await response.json();
 
+    console.log("SerpApi HTTP status:", response.status);
+
     if (!response.ok) {
-      console.error("SerpApi HTTP status:", response.status);
-      console.error("SerpApi error:", data);
+      console.error(
+        "SerpApi error:",
+        JSON.stringify(data, null, 2)
+      );
 
       return res.status(response.status).json({
         error:
@@ -72,7 +82,10 @@ app.get("/api/resources", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("SerpApi server error:", error);
+    console.error(
+      "SerpApi server error:",
+      error
+    );
 
     res.status(500).json({
       error: "Unable to load health resources."
@@ -81,8 +94,7 @@ app.get("/api/resources", async (req, res) => {
 });
 
 /* =========================================================
-   GEMINI AI HEALTH ASSISTANT
-   Gemini Interactions API
+   GEMINI AI ASSISTANT
 ========================================================= */
 
 app.post("/api/chat", async (req, res) => {
@@ -97,7 +109,11 @@ app.post("/api/chat", async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    console.log("GEMINI KEY EXISTS:", Boolean(apiKey));
+    console.log(
+      "GEMINI KEY EXISTS:",
+      Boolean(apiKey)
+    );
+
     console.log(
       "GEMINI KEY LENGTH:",
       apiKey ? apiKey.length : 0
@@ -105,31 +121,23 @@ app.post("/api/chat", async (req, res) => {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY is not available to the server."
+        error:
+          "GEMINI_API_KEY is not available to the server."
       });
     }
 
+    /* =====================================================
+       TWINCARE AI PROMPT
+    ===================================================== */
+
     const prompt = `
-You are TwinCare AI, an educational Digital Health Twin assistant.
+You are TwinCare AI, an educational Digital Health Twin
+assistant for a healthcare technology hackathon prototype.
 
-Your job is to analyze SYNTHETIC / DEMO health data for a student hackathon prototype.
+Analyze ONLY the synthetic/demo health information supplied
+by the user.
 
-IMPORTANT SAFETY RULES:
-
-- Do not diagnose diseases.
-- Do not claim that the user has a medical condition.
-- Do not prescribe medicines.
-- Do not recommend medication doses or medication changes.
-- Do not invent measurements or medical history.
-- Clearly distinguish demo/simulated data from real clinical data.
-- Use cautious language such as "may", "could", "might", or "can be worth monitoring".
-- Give general educational precautions only.
-- Encourage professional medical advice when appropriate.
-- If the information suggests an urgent situation, advise seeking appropriate urgent medical care.
-- Do not make the user unnecessarily afraid.
-- Do not provide extreme diet, exercise, or health recommendations.
-
-SYNTHETIC HEALTH DATA:
+HEALTH DATA:
 
 ${JSON.stringify(healthData || {}, null, 2)}
 
@@ -137,11 +145,31 @@ USER MESSAGE:
 
 ${message}
 
+IMPORTANT SAFETY RULES:
+
+1. Do not diagnose diseases.
+2. Do not claim that the user has a medical condition.
+3. Do not prescribe medication.
+4. Do not recommend medication doses.
+5. Do not recommend changing or stopping medication.
+6. Do not invent health measurements.
+7. Do not invent medical history.
+8. Treat the supplied information as synthetic/demo data.
+9. Use cautious language such as:
+   "may", "could", "might", "worth monitoring".
+10. Give general educational precautions only.
+11. Encourage consultation with a qualified healthcare professional
+    when appropriate.
+12. If concerning symptoms are described, advise appropriate
+    urgent professional medical care.
+13. Do not create unnecessary fear.
+14. Do not provide extreme diet or exercise recommendations.
+
 Return the response using these sections:
 
 ## 🩺 Health Overview
 
-Briefly summarize the information provided.
+Briefly summarize the supplied demo health information.
 
 ## 📊 Key Observations
 
@@ -149,54 +177,60 @@ Identify important measurements or patterns.
 
 ## 📈 Trend Analysis
 
-Discuss trends only if enough historical data is available.
+Discuss trends only when enough historical information
+is available.
 
 ## ⚠️ Possible Risk Indicators
 
-Mention values or patterns that may deserve attention.
+Identify measurements or patterns that may deserve
+attention.
 
-Do NOT call them diagnoses.
+Do NOT call these diagnoses.
 
 ## 🔎 Why This Was Flagged
 
-Explain the reasoning in simple language.
+Explain why a particular value or pattern may be worth
+monitoring.
 
 ## 🥗 Recommended Precautions
 
-Give safe, general educational precautions.
+Give safe and general health precautions.
 
-Do not prescribe medication.
+Do not prescribe medicines.
 
 ## 👀 What To Monitor
 
-List useful measurements, symptoms, habits, or trends that could be monitored.
+List measurements, symptoms, habits, or trends that
+could be monitored.
 
 ## 👨‍⚕️ When To Seek Professional Advice
 
-Explain when it would be appropriate to speak with a qualified healthcare professional.
+Explain when it would be appropriate to speak with
+a qualified healthcare professional.
 
-For potentially urgent symptoms, advise appropriate urgent medical care.
+If the information suggests an urgent situation,
+recommend appropriate urgent medical care.
 
 ## 🧠 AI Insight
 
-Give a concise educational insight based only on the provided information.
+Give a short educational insight based ONLY on the
+information supplied.
 
 ## ⚕️ Important Disclaimer
 
-This analysis is for educational purposes only and does not diagnose or treat medical conditions.
+This analysis is for educational purposes only and
+does not diagnose or treat medical conditions.
 
-Remember:
+TwinCare AI is a prototype.
 
-The TwinCare AI Digital Twin is a prototype.
-
-The health data is synthetic/demo data.
-
-Do not present the output as a clinical diagnosis or medical prediction.
+The information used by this demonstration is
+synthetic/demo health data and should not be treated
+as clinical advice or a medical diagnosis.
 `;
 
-    /* -----------------------------------------------------
-       Gemini Interactions API
-    ----------------------------------------------------- */
+    /* =====================================================
+       GEMINI INTERACTIONS API
+    ===================================================== */
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/interactions",
@@ -222,6 +256,10 @@ Do not present the output as a clinical diagnosis or medical prediction.
 
     const data = await response.json();
 
+    /* =====================================================
+       GEMINI ERROR
+    ===================================================== */
+
     if (!response.ok) {
       console.error(
         "Gemini API error:",
@@ -236,20 +274,20 @@ Do not present the output as a clinical diagnosis or medical prediction.
       });
     }
 
-    /* -----------------------------------------------------
-       Get Gemini output
-    ----------------------------------------------------- */
+    /* =====================================================
+       EXTRACT GEMINI RESPONSE
+    ===================================================== */
 
     let output = data.output_text || "";
 
     /*
-      Fallback in case the response structure contains
-      model output content instead of output_text.
+      Fallback for alternative response structures.
     */
 
     if (!output && Array.isArray(data.output)) {
       output = data.output
         .map((item) => {
+
           if (typeof item === "string") {
             return item;
           }
@@ -272,20 +310,26 @@ Do not present the output as a clinical diagnosis or medical prediction.
 
     if (!output) {
       console.error(
-        "Gemini returned an unexpected response:",
+        "Unexpected Gemini response:",
         JSON.stringify(data, null, 2)
       );
 
       return res.status(500).json({
-        error: "Gemini returned an empty response."
+        error:
+          "Gemini returned an empty response."
       });
     }
+
+    /* =====================================================
+       SEND RESPONSE TO FRONTEND
+    ===================================================== */
 
     res.json({
       reply: output
     });
 
   } catch (error) {
+
     console.error(
       "Gemini server error:",
       error
@@ -299,20 +343,11 @@ Do not present the output as a clinical diagnosis or medical prediction.
 });
 
 /* =========================================================
-   FRONTEND FALLBACK
-========================================================= */
-
-app.get("*", (req, res) => {
-  res.sendFile("index.html", {
-    root: "public"
-  });
-});
-
-/* =========================================================
    SERVER START
 ========================================================= */
 
 app.listen(PORT, () => {
+
   console.log(
     `TwinCare AI running on port ${PORT}`
   );
