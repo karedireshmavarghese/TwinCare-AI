@@ -8,7 +8,39 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Test route
+const resources = [
+  {
+    title: "Blood pressure",
+    description: "Learn what blood pressure numbers mean and how to maintain healthy levels.",
+    url: "https://www.who.int/news-room/fact-sheets/detail/hypertension",
+    source: "World Health Organization"
+  },
+  {
+    title: "High blood pressure",
+    description: "NHS guidance on causes, symptoms, prevention, and treatment of high blood pressure.",
+    url: "https://www.nhs.uk/conditions/high-blood-pressure-hypertension/",
+    source: "NHS"
+  },
+  {
+    title: "Heart health",
+    description: "CDC information on heart disease, risk factors, and prevention.",
+    url: "https://www.cdc.gov/heart-disease/index.html",
+    source: "CDC"
+  },
+  {
+    title: "Blood glucose testing",
+    description: "MedlinePlus information about blood glucose tests and diabetes.",
+    url: "https://medlineplus.gov/lab-tests/blood-glucose-test/",
+    source: "MedlinePlus"
+  },
+  {
+    title: "Healthy diet",
+    description: "WHO guidance on healthy diet, nutrition, and disease prevention.",
+    url: "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+    source: "World Health Organization"
+  }
+];
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -16,7 +48,21 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Gemini chat route
+app.get("/api/resources", (req, res) => {
+  const query = (req.query.q || "").toLowerCase().trim();
+
+  if (!query) {
+    return res.json({ results: resources });
+  }
+
+  const results = resources.filter(resource =>
+    resource.title.toLowerCase().includes(query) ||
+    resource.description.toLowerCase().includes(query)
+  );
+
+  res.json({ results });
+});
+
 app.post("/api/gemini", async (req, res) => {
   try {
     const { message } = req.body;
@@ -42,8 +88,9 @@ app.post("/api/gemini", async (req, res) => {
               parts: [
                 {
                   text: `You are TwinCare AI, a general health education assistant.
-Explain health topics simply. Do not diagnose conditions, prescribe treatment, or replace a doctor.
-If the question may be urgent, advise the user to contact a healthcare professional.
+Explain health topics simply and clearly.
+Do not diagnose medical conditions, prescribe medicines, or replace professional medical advice.
+If the question may be urgent, advise the user to contact a qualified healthcare professional.
 
 User question: ${message}`
                 }
@@ -58,8 +105,9 @@ User question: ${message}`
 
     if (!response.ok) {
       console.error("Gemini API error:", data);
+
       return res.status(500).json({
-        error: "The AI assistant is temporarily unavailable."
+        error: "The AI assistant is temporarily unavailable. Please try again."
       });
     }
 
@@ -70,6 +118,7 @@ User question: ${message}`
     res.json({ reply });
   } catch (error) {
     console.error("Gemini route error:", error);
+
     res.status(500).json({
       error: "Something went wrong while contacting the AI assistant."
     });
