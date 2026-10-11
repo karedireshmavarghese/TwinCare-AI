@@ -1,12 +1,27 @@
 {
-  "name": "healthtwin-ai",
+  "name": "twincare-ai",
   "version": "1.0.0",
-  "description": "AI-powered individual patient Digital Twin prototype",
+  "description": "AI-powered personal health digital twin platform",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
+  "keywords": [
+    "health",
+    "digital-twin",
+    "ai",
+    "gemini",
+    "firebase"
+  ],
+  "author": "karedireshmavarghese",
+  "license": "MIT",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "firebase": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
