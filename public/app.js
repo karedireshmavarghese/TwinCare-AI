@@ -1,72 +1,35 @@
+async function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const message = input.value.trim();
 
-async function searchHealthResources() {
-  const input = document.getElementById("resourceSearchInput");
-  const results = document.getElementById("resourceResults");
+  if (!message) return;
 
-  if (!input || !results) {
-    console.error("Resource Explorer HTML elements were not found.");
-    return;
-  }
+  addMessage("user", message);
+  input.value = "";
 
-  const query = input.value.trim();
-
-  if (!query) {
-    results.textContent = "Enter a health topic to search resources.";
-    return;
-  }
-
-  results.textContent = "Searching health resources...";
+  const loadingMessage = addMessage("ai", "Thinking...");
 
   try {
-    const response = await fetch(
-      `/api/resources?q=${encodeURIComponent(query)}`
-    );
+    const response = await fetch("/api/gemini", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
 
     const data = await response.json();
 
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || "Resource search failed.");
-    }
+    loadingMessage.remove();
 
-    results.replaceChildren();
-
-    if (!data.resources || data.resources.length === 0) {
-      results.textContent =
-        "No matching resources found. Try hypertension or health.";
+    if (!response.ok) {
+      addMessage("ai", data.error || "AI assistant is unavailable.");
       return;
     }
 
-    data.resources.forEach((resource) => {
-      const card = document.createElement("article");
-      const title = document.createElement("h3");
-      const description = document.createElement("p");
-      const link = document.createElement("a");
-
-      title.textContent = resource.title;
-      description.textContent = resource.description;
-      link.textContent = "Read resource ↗";
-      link.href = resource.url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-
-      card.append(title, description, link);
-      results.appendChild(card);
-    });
+    addMessage("ai", data.reply);
   } catch (error) {
-    console.error("Resource Explorer error:", error);
-    results.textContent =
-      "Unable to load resources. Please try again.";
+    loadingMessage.remove();
+    addMessage("ai", "Network error. Please try again.");
   }
 }
-
-document
-  .getElementById("resourceSearchButton")
-  ?.addEventListener("click", searchHealthResources);
-
-document
-  .getElementById("resourceSearchInput")
-  ?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      searchHealthResources();
-    }
-  });
