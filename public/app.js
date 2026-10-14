@@ -4,20 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatForm = document.getElementById("chat-form");
   const chatInput = document.getElementById("chat-input");
   const chatMessages = document.getElementById("chat-messages");
-  const sendButton = document.getElementById("send-button");
 
   const resourceSearchInput = document.getElementById("resource-search-input");
   const resourceSearchButton = document.getElementById("resource-search-button");
 
   if (chatForm) {
     chatForm.addEventListener("submit", event => {
-      event.preventDefault();
-      sendMessage();
-    });
-  }
-
-  if (sendButton) {
-    sendButton.addEventListener("click", event => {
       event.preventDefault();
       sendMessage();
     });
