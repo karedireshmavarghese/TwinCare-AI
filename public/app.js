@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingMessage = addMessage("ai", "Thinking...");
 
     try {
-      const response = await fetch("/api/gemini", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
