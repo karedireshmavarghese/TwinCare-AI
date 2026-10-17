@@ -32,12 +32,6 @@ const resources = [
     description: "MedlinePlus information about blood glucose tests and diabetes.",
     url: "https://medlineplus.gov/lab-tests/blood-glucose-test/",
     source: "MedlinePlus"
-  },
-  {
-    title: "Healthy diet",
-    description: "WHO guidance on healthy diet, nutrition, and disease prevention.",
-    url: "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
-    source: "World Health Organization"
   }
 ];
 
@@ -63,7 +57,7 @@ app.get("/api/resources", (req, res) => {
   res.json({ results });
 });
 
-app.post("/api/gemini", async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
@@ -117,7 +111,7 @@ User question: ${message}`
 
     res.json({ reply });
   } catch (error) {
-    console.error("Gemini route error:", error);
+    console.error("Chat route error:", error);
 
     res.status(500).json({
       error: "Something went wrong while contacting the AI assistant."
