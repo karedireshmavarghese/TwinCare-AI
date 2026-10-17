@@ -67,8 +67,14 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({
+        error: "Gemini API key is not configured."
+      });
+    }
+
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -98,7 +104,7 @@ User question: ${message}`
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini API error:", data);
+      console.error("Gemini API error:", JSON.stringify(data, null, 2));
 
       return res.status(500).json({
         error: "The AI assistant is temporarily unavailable. Please try again."
