@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import geminiRouter from "./gemini-route.js";
 
@@ -33,6 +34,14 @@ app.get("/api/resources", (req, res) => {
 
 app.use("/api", geminiRouter);                                   // POST /api/chat
 app.use("/api", (req, res) => res.status(404).json({ error: "API route not found" }));
-app.use(express.static(path.join(dir, "public")));
+const pub = path.join(dir, "public");
+app.use(express.static(pub));
+app.get("/", (req, res) => {
+  const a = path.join(pub, "index.html");
+  const b = path.join(dir, "index.html");
+  const file = fs.existsSync(a) ? a : fs.existsSync(b) ? b : null;
+  if (!file) return res.status(500).send("index.html is missing. Put it at public/index.html in your repo.");
+  res.sendFile(file);
+});
 
 app.listen(process.env.PORT || 3000, () => console.log("TwinCare AI running"));
