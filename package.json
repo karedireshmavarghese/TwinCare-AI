@@ -1,1 +1,11 @@
-
+{
+  "name": "twincare-ai",
+  "version": "1.0.0",
+  "description": "AI-powered personal health digital twin (educational prototype)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT",
+  "dependencies": { "express": "^5.1.0" },
+  "engines": { "node": ">=18.0.0" }
+}
