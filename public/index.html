@@ -1,1 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TwinCare AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a1628;--card:#112240;--line:#1e3a5f;--cyan:#22d3ee;--text:#e6f1ff;--mute:#8aa4c8;--warn:#fbbf24;--bad:#f87171;--ok:#34d399}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
+button,input{font:inherit}input{background:#0d1d36;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px;width:100%}
+button{background:var(--cyan);color:#06222b;border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;transition:.15s}
+button:hover{filter:brightness(1.1)}button.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.big{font-size:1.8rem;font-weight:700;color:var(--cyan)}.mute{color:var(--mute);font-size:.9rem}
+.tag{font-size:.72rem;padding:2px 8px;border-radius:99px;background:var(--warn);color:#222;margin-left:6px}
+.tag.ok{background:var(--ok)}
+#auth{max-width:380px;margin:10vh auto;padding:16px}#auth input{margin-bottom:10px}
+#app{display:none;min-height:100vh}nav{position:fixed;inset:0 auto 0 0;width:210px;background:#07111f;border-right:1px solid var(--line);padding:20px 12px}
+nav h2{color:var(--cyan);margin:0 0 20px 8px}nav a{display:block;padding:11px 12px;border-radius:8px;color:var(--mute);cursor:pointer;margin-bottom:4px}
+nav a.on,nav a:hover{background:var(--card);color:var(--cyan)}main{margin-left:210px;padding:24px;max-width:1100px}
+.view{display:none}.view.on{display:block}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:110px}
+#log{height:320px;overflow:auto}.msg{padding:9px 12px;border-radius:10px;margin:6px 0;max-width:85%;white-space:pre-wrap}
+.msg.u{background:var(--line);margin-left:auto}.msg.a{background:#0d1d36;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{padding:7px;border-bottom:1px solid var(--line);text-align:left}
+.err{color:var(--bad);min-height:1.2em}.note{border-left:3px solid var(--warn);padding-left:10px;color:var(--mute);font-size:.85rem}
+@media(max-width:720px){nav{inset:auto 0 0 0;width:100%;display:flex;padding:6px;z-index:5}nav h2{display:none}nav a{flex:1;text-align:center;font-size:.8rem;margin:0;padding:10px 2px}main{margin:0;padding:14px 14px 80px}}
+</style>
+</head>
+<body>
 
+<section id="auth">
+  <h1 style="color:var(--cyan)">TwinCare AI</h1>
+  <p class="mute">Your personal health digital twin. Educational use only.</p>
+  <div class="card">
+    <input id="name" placeholder="Full name" style="display:none">
+    <input id="email" type="email" placeholder="Email" autocomplete="email">
+    <input id="pw" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password">
+    <p class="err" id="autherr"></p>
+    <button id="authbtn" style="width:100%">Sign in</button>
+    <p class="mute" style="text-align:center;cursor:pointer" id="toggle">No account? Create one</p>
+  </div>
+</section>
+
+<div id="app">
+<nav>
+  <h2>TwinCare AI</h2>
+  <a data-v="overview" class="on">Overview</a><a data-v="analytics">Analytics</a>
+  <a data-v="sim">What-If</a><a data-v="ai">Assistant</a><a data-v="res">Resources</a><a data-v="profile">Profile</a>
+</nav>
+<main>
+
+<div class="view on" id="overview">
+  <h1>Health Overview</h1>
+  <div class="grid" id="cards"></div><br>
+  <div class="card"><canvas id="c1" height="110"></canvas></div>
+  <div class="card"><h3>Add a measurement</h3>
+    <div class="row"><input id="a_sys" type="number" placeholder="Systolic"><input id="a_dia" type="number" placeholder="Diastolic">
+    <input id="a_hr" type="number" placeholder="Heart rate"><input id="a_glu" type="number" placeholder="Glucose mg/dL (optional)"></div><br>
+    <button id="addbtn">Save reading</button> <span class="err" id="adderr"></span></div>
+</div>
+
+<div class="view" id="analytics">
+  <h1>Health Analytics</h1>
+  <div class="card"><canvas id="c2" height="120"></canvas></div>
+  <div class="card" style="overflow:auto"><table id="tbl"></table></div>
+</div>
+
+<div class="view" id="sim">
+  <h1>What-If Simulation</h1>
+  <p class="note">Hypothetical values only. This is not a medical prediction and not medical advice.</p>
+  <div class="card"><div class="row"><input id="s_sys" type="number" placeholder="Simulated systolic"><input id="s_dia" type="number" placeholder="Simulated diastolic">
+  <input id="s_hr" type="number" placeholder="Simulated heart rate"><input id="s_glu" type="number" placeholder="Simulated glucose"></div><br>
+  <button id="simbtn">Compare with my baseline</button> <span class="err" id="simerr"></span></div>
+  <div class="card"><canvas id="c3" height="110"></canvas><p id="simtxt"></p></div>
+</div>
+
+<div class="view" id="ai">
+  <h1>AI Assistant</h1>
+  <p class="note">General health education only. It cannot diagnose conditions or replace a doctor.</p>
+  <div class="card"><div id="log"></div><br><div class="row"><input id="q" placeholder="Ask about blood pressure, trends, prevention..." style="flex:4"><button id="send">Send</button></div></div>
+</div>
+
+<div class="view" id="res">
+  <h1>Health Resource Explorer</h1>
+  <div class="row"><input id="rq" placeholder="Search e.g. blood pressure, diabetes, sleep" style="flex:4"><button id="rbtn">Search</button></div><br>
+  <div id="rout"></div>
+</div>
+
+<div class="view" id="profile">
+  <h1>Patient Profile</h1>
+  <div class="card"><div class="big" id="pname"></div><div class="mute" id="pmail"></div></div>
+  <div class="card"><h3>Demo data</h3><p class="mute">Synthetic readings for testing. They are labeled "Demo" everywhere and are not real measurements.</p>
+    <button id="demo">Load demo data</button> <button class="ghost" id="cleardemo">Remove demo data</button></div>
+  <button class="ghost" id="logout">Log out</button>
+</div>
+
+</main></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+// Paste your Firebase web config here (Project settings > Your apps). It is safe to be public.
+const cfg={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT",appId:"YOUR_APP_ID"};
+const auth=getAuth(initializeApp(cfg));
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let user=null,data=[],charts={},mode="login",chat=[];
+const key=()=>"twincare:"+user.uid, save=()=>localStorage.setItem(key(),JSON.stringify(data));
+const num=id=>{const v=$(id).value;return v===""?null:Number(v)};
+
+// ---------- auth ----------
+const msgs={"auth/invalid-credential":"Wrong email or password.","auth/email-already-in-use":"That email is already registered.","auth/weak-password":"Password must be at least 6 characters.","auth/invalid-email":"Please enter a valid email.","auth/network-request-failed":"Network error. Check your connection."};
+$("#toggle").onclick=()=>{mode=mode==="login"?"register":"login";$("#name").style.display=mode==="register"?"block":"none";
+  $("#authbtn").textContent=mode==="login"?"Sign in":"Create account";$("#toggle").textContent=mode==="login"?"No account? Create one":"Have an account? Sign in"};
+$("#authbtn").onclick=async()=>{$("#autherr").textContent="";
+  try{ if(mode==="register"){const c=await createUserWithEmailAndPassword(auth,$("#email").value,$("#pw").value);
+        await updateProfile(c.user,{displayName:$("#name").value||"Patient"});location.reload();}
+       else await signInWithEmailAndPassword(auth,$("#email").value,$("#pw").value);
+  }catch(e){$("#autherr").textContent=msgs[e.code]||"Could not sign in: "+e.code}};
+$("#logout").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{user=u;$("#auth").style.display=u?"none":"block";$("#app").style.display=u?"block":"none";
+  if(u){data=JSON.parse(localStorage.getItem(key())||"[]");$("#pname").textContent=u.displayName||"Patient";$("#pmail").textContent=u.email;render()}});
+
+// ---------- navigation ----------
+$$("nav a").forEach(a=>a.onclick=()=>{$$("nav a,.view").forEach(x=>x.classList.remove("on"));a.classList.add("on");$("#"+a.dataset.v).classList.add("on");render()});
+
+// ---------- educational classification (general reference ranges) ----------
+const bp=(s,d)=>s>=140||d>=90?["Stage 2 range","bad"]:s>=130||d>=80?["Stage 1 range","warn"]:s>=120?["Elevated","warn"]:["Typical range","ok"];
+const hrC=h=>h>100?"Above typical resting range":h<60?"Below typical resting range (can be normal for fit people)":"Typical resting range";
+const gluC=g=>g>=126?"High (fasting reference)":g>=100?"Higher than typical (fasting reference)":g>=70?"Typical (fasting reference)":"Low";
+
+function draw(id,cfg){charts[id]?.destroy();charts[id]=new Chart($(id),cfg)}
+const dark={scales:{x:{ticks:{color:"#8aa4c8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#8aa4c8"},grid:{color:"#1e3a5f"}}},plugins:{legend:{labels:{color:"#e6f1ff"}}}};
+const ds=(label,k,c,extra={})=>({label,data:data.map(r=>r[k]),borderColor:c,backgroundColor:c,tension:.3,spanGaps:true,...extra});
+
+function render(){
+  const last=data[data.length-1];
+  $("#cards").innerHTML=last?`
+   <div class="card"><div class="mute">Blood pressure ${last.demo?'<span class="tag">Demo</span>':''}</div><div class="big">${last.sys}/${last.dia}</div><div class="mute">${bp(last.sys,last.dia)[0]}</div></div>
+   <div class="card"><div class="mute">Heart rate</div><div class="big">${last.hr} bpm</div><div class="mute">${hrC(last.hr)}</div></div>
+   <div class="card"><div class="mute">Glucose</div><div class="big">${last.glu??"—"}</div><div class="mute">${last.glu?gluC(last.glu):"Not recorded"}</div></div>
+   <div class="card"><div class="mute">Readings stored</div><div class="big">${data.length}</div><div class="mute">${last.date}</div></div>`
+   :`<div class="card">No readings yet. Add one below, or load demo data in Profile.</div>`;
+  const lbl=data.map(r=>r.date+(r.demo?" (demo)":""));
+  draw("#c1",{type:"line",data:{labels:lbl,datasets:[ds("Systolic","sys","#22d3ee"),ds("Diastolic","dia","#818cf8"),ds("Heart rate","hr","#34d399")]},options:dark});
+  draw("#c2",{type:"line",data:{labels:lbl,datasets:[ds("Systolic","sys","#22d3ee"),ds("Diastolic","dia","#818cf8"),ds("Heart rate","hr","#34d399"),ds("Glucose","glu","#fbbf24",{yAxisID:"y1"})]},
+    options:{...dark,scales:{...dark.scales,y1:{position:"right",ticks:{color:"#fbbf24"},grid:{display:false}}}}});
+  $("#tbl").innerHTML="<tr><th>Date</th><th>BP</th><th>HR</th><th>Glucose</th><th>Type</th></tr>"+[...data].reverse().map(r=>`<tr><td>${r.date}</td><td>${r.sys}/${r.dia}</td><td>${r.hr}</td><td>${r.glu??"—"}</td><td>${r.demo?'<span class="tag">Demo</span>':'<span class="tag ok">Real</span>'}</td></tr>`).join("");
+}
+
+// ---------- add / demo data ----------
+$("#addbtn").onclick=()=>{const [s,d,h,g]=["#a_sys","#a_dia","#a_hr","#a_glu"].map(num);
+  if(!s||!d||!h||s<50||s>260||d<30||d>160||h<25||h>220){$("#adderr").textContent="Enter realistic systolic, diastolic and heart rate values.";return}
+  $("#adderr").textContent="";data.push({date:new Date().toISOString().slice(0,10),sys:s,dia:d,hr:h,glu:g,demo:false});save();render();
+  ["#a_sys","#a_dia","#a_hr","#a_glu"].forEach(i=>$(i).value="")};
+$("#demo").onclick=()=>{data=data.filter(r=>!r.demo);const n=[];for(let i=13;i>=0;i--){const t=new Date(Date.now()-i*864e5).toISOString().slice(0,10),w=Math.sin(i);
+  n.push({date:t,sys:Math.round(126+6*w+Math.random()*6),dia:Math.round(82+3*w+Math.random()*4),hr:Math.round(72+4*w+Math.random()*5),glu:Math.round(98+8*w+Math.random()*8),demo:true})}
+  data=[...n,...data];save();render()};
+$("#cleardemo").onclick=()=>{data=data.filter(r=>!r.demo);save();render()};
+
+// ---------- simulation ----------
+$("#simbtn").onclick=()=>{const [s,d,h,g]=["#s_sys","#s_dia","#s_hr","#s_glu"].map(num);
+  if(!data.length){$("#simerr").textContent="Add or load readings first to create a baseline.";return}
+  if(!s||!d||!h){$("#simerr").textContent="Enter simulated blood pressure and heart rate.";return}$("#simerr").textContent="";
+  const rec=data.slice(-5),avg=k=>{const v=rec.map(r=>r[k]).filter(x=>x!=null);return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):0};
+  const base=[avg("sys"),avg("dia"),avg("hr"),avg("glu")],sim=[s,d,h,g??0];
+  draw("#c3",{type:"bar",data:{labels:["Systolic","Diastolic","Heart rate","Glucose"],datasets:[{label:"Baseline (last 5 avg)",data:base,backgroundColor:"#22d3ee"},{label:"Hypothetical",data:sim,backgroundColor:"#fbbf24"}]},options:dark});
+  const diff=(n,i)=>`${n}: ${sim[i]-base[i]>=0?"+":""}${sim[i]-base[i]}`;
+  $("#simtxt").innerHTML=`<b>Differences:</b> ${diff("Systolic",0)}, ${diff("Diastolic",1)}, ${diff("Heart rate",2)}${g?", "+diff("Glucose",3):""}.<br>
+   Baseline BP falls in the <b>${bp(base[0],base[1])[0]}</b>; the hypothetical BP would fall in the <b>${bp(s,d)[0]}</b> (general adult reference ranges). Hypothetical resting heart rate: ${hrC(h)}.<br>
+   <span class="mute">Hypothetical and educational only, not a medical prediction. Talk to a healthcare professional about real readings.</span>`};
+
+// ---------- AI chat ----------
+function bubble(t,c){const d=document.createElement("div");d.className="msg "+c;d.textContent=t;$("#log").append(d);$("#log").scrollTop=1e9;return d}
+async function ask(){const m=$("#q").value.trim();if(!m)return;$("#q").value="";bubble(m,"u");const w=bubble("Thinking...","a");$("#send").disabled=true;
+  try{const recent=data.slice(-7).map(({date,sys,dia,hr,glu,demo})=>({date,sys,dia,hr,glu,demo}));
+    const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:m,history:chat,context:{recent_readings:recent}})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||"Request failed");
+    w.textContent=j.reply;chat.push({role:"user",text:m},{role:"assistant",text:j.reply});
+  }catch(e){w.textContent="Sorry: "+e.message;w.style.color="var(--bad)"}$("#send").disabled=false}
+$("#send").onclick=ask;$("#q").onkeydown=e=>{if(e.key==="Enter")ask()};
+
+// ---------- resources ----------
+async function search(){const o=$("#rout");o.textContent="Searching...";
+  try{const r=await fetch("/api/resources?q="+encodeURIComponent($("#rq").value));if(!r.ok)throw 0;const j=await r.json();
+    o.innerHTML=j.count?j.results.map(x=>`<div class="card"><b>${x.title}</b> <span class="tag ok">${x.source}</span><p class="mute">${x.description}</p><a style="color:var(--cyan)" href="${x.url}" target="_blank" rel="noopener">Open source</a></div>`).join(""):`<div class="card">No resources found. Try "blood pressure", "diabetes" or "sleep".</div>`;
+  }catch{o.innerHTML=`<div class="card err">Could not load resources right now. The rest of the site still works.</div>`}}
+$("#rbtn").onclick=search;$("#rq").onkeydown=e=>{if(e.key==="Enter")search()};search();
+</script>
+</body>
+</html>
