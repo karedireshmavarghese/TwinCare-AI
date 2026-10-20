@@ -102,8 +102,18 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{padding:7px;bord
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-// Paste your Firebase web config here (Project settings > Your apps). It is safe to be public.
-const cfg={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT",appId:"YOUR_APP_ID"};
+// ============================================================
+// STEP: PASTE YOUR FIREBASE CONFIG BELOW (replace the 4 values)
+// Firebase console > Project settings > Your apps > Web app
+// This config is safe to be public. Do NOT put your Gemini key here.
+// ============================================================
+const cfg={
+  apiKey:"YOUR_API_KEY",
+  authDomain:"YOUR_PROJECT.firebaseapp.com",
+  projectId:"YOUR_PROJECT",
+  appId:"YOUR_APP_ID"
+};
+const FB_READY=!Object.values(cfg).some(v=>v.includes("YOUR_"));
 const auth=getAuth(initializeApp(cfg));
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 let user=null,data=[],charts={},mode="login",chat=[];
@@ -115,6 +125,7 @@ const msgs={"auth/invalid-credential":"Wrong email or password.","auth/email-alr
 $("#toggle").onclick=()=>{mode=mode==="login"?"register":"login";$("#name").style.display=mode==="register"?"block":"none";
   $("#authbtn").textContent=mode==="login"?"Sign in":"Create account";$("#toggle").textContent=mode==="login"?"No account? Create one":"Have an account? Sign in"};
 $("#authbtn").onclick=async()=>{$("#autherr").textContent="";
+  if(!FB_READY){$("#autherr").textContent="Firebase is not set up yet. Paste your Firebase config into public/index.html.";return}
   try{ if(mode==="register"){const c=await createUserWithEmailAndPassword(auth,$("#email").value,$("#pw").value);
         await updateProfile(c.user,{displayName:$("#name").value||"Patient"});location.reload();}
        else await signInWithEmailAndPassword(auth,$("#email").value,$("#pw").value);
