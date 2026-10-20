@@ -105,4 +105,23 @@ router.post("/chat", async (req, res) => {
   }
 });
 
+// Diagnostic: open /api/diagnose in the browser. Never reveals the key.
+router.get("/diagnose", async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const out = { keyPresent: Boolean(apiKey), keyLength: apiKey ? apiKey.length : 0, model: MODEL };
+  if (!apiKey) return res.json({ ...out, result: "GEMINI_API_KEY is not set on this server." });
+  try {
+    const r = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Say OK" }] }] }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const d = await r.json().catch(() => ({}));
+    res.json({ ...out, geminiStatus: r.status, result: r.ok ? "Gemini works" : d?.error?.message || "Gemini returned an error" });
+  } catch (e) {
+    res.json({ ...out, result: "Network error: " + e.message });
+  }
+});
+
 export default router;
