@@ -30,7 +30,7 @@ package.json
 1. `npm install`
 2. Copy `.env.example` to `.env` and add your `GEMINI_API_KEY` (never commit `.env`)
 3. `node --env-file=.env server.js`
-4. Open http://localhost:3000
+4. Open https://twincare-ai.onrender.com
 
 ## Firebase setup
 Create a Firebase project, enable Email/Password sign-in, add a Web app, and paste its config into `public/index.html`. Add your Render domain under Authentication > Settings > Authorized domains.
